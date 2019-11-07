@@ -61,23 +61,21 @@ class Window(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.levelCounter = 0
+        self.maxLevel = -1
+        self.levels = []
+        self.momentaneslevel = None
         self.wW = 800       # wW = windowWidth
         self.setGeometry(1200, 150, self.wW, self.wW)
         self.setWindowTitle("Spaß mit grünem")
+        self.initalisierung()
         self.show()
         self.keyPressEvent = self.fn
         self.setMouseTracking(True)
-        self.levelCounter = 0
-        self.level = Levelstruktur()
 
-        """
-        self.timer = QTimer()
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self.turn)
-        self.timer.start()
-        """
 
     def paintEvent(self, event):
+        # Hintergrund zeichnen
         painter = QPainter(self)
         painter.setPen(QPen(QColor(0, 180, 0), 1, Qt.SolidLine))
         painter.fillRect(0, 0, self.wW, self.wW, QColor(0, 180, 0))
@@ -85,18 +83,28 @@ class Window(QWidget):
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
         painter.drawText(rect1, 0, str(self.levelCounter))
 
+        # Unterscheidungen je Level
         self.auswahl()
 
     def fn(self, e):
         if e.key() == Qt.Key_Left:
-            print("hallo")
+            print("du hast links gedrueckt")
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
         print("               ", pos.x(), pos.y())
 
-        if self.level.beruehrt(pos.x(), pos.y()):
+        if self.levels[self.levelCounter].beruehrt(pos.x(), pos.y()):
             self.update()
+
+    def initalisierung(self):
+        level0 = Levelstruktur()
+        for j in range(5):
+            for i in range(5):
+                level0.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
+                                                     self.wW / 16 + self.wW * (3 / 16) * j,
+                                                     self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
+        self.levels.append(level0)
 
     def auswahl(self):
         print("Level : ", self.levelCounter)
@@ -105,20 +113,22 @@ class Window(QWidget):
         painter.setPen(QPen(QColor(0, 90, 0), 1, Qt.SolidLine))
 
         if self.levelCounter == 0:
+            """
             # Levelstruktur erstellen
             for j in range(5):
                 for i in range(5):
                     self.level.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
                                                                       self.wW / 16 + self.wW * (3/16) * j,
                                                                       self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
+            """
             # Level zeichnen
-            for rechteck in self.level.rechtecke:
+            for rechteck in self.levels[self.levelCounter].rechtecke:
                 painter.fillRect(rechteck.xKoordinate, rechteck.yKoordinate,
                                  rechteck.weite, rechteck.hoehe, rechteck.farbe)
 
-            for kreis in self.level.kreise:
+            for kreis in self.levels[self.levelCounter].kreise:
                 pass
-            self.level.weiteresZeichnen()
+            self.levels[self.levelCounter].weiteresZeichnen()
 
 
 
