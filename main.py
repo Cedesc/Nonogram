@@ -15,14 +15,16 @@ class Rechteck:
         self.hoehe = hoehe
         self.farbe = farbe
         self.zugehoerigesLevel = None
+        self.func = self.func1
 
 
-    def func(self, x, y):            # Funktion, die ausgeführt wird, wenn das Rechteck geklickt wird
-        print("Laenge :  ", len(self.zugehoerigesLevel.rechtecke), "   x :  ", x, "  y :  ", y)
+    def func1(self, x, y):            # Funktion, die ausgeführt wird, wenn das Rechteck geklickt wird
+        self.farbe = QColor(0, 180, 0)
+        self.func = self.func2
 
 
-    def funci(self, x, y):
-        print("Laenge :  ", len(self.zugehoerigesLevel.rechtecke), "   x :  ", x, "  y :  ", y)
+    def func2(self, x, y):
+        pass
 
 
 class Kreis:
@@ -34,9 +36,10 @@ class Kreis:
 
 class Levelstruktur:
 
-    def __init__(self):
+    def __init__(self, zugehoerigesFenster):
         self.rechtecke = []
         self.kreise = []
+        self.zugehoerigesFenster = zugehoerigesFenster
 
     def rechteck_hinzufuegen(self, rechteck):
         self.rechtecke.append(rechteck)
@@ -50,6 +53,12 @@ class Levelstruktur:
             if (rechteck.xKoordinate <= x <= rechteck.xKoordinate + rechteck.weite) and (
                     rechteck.yKoordinate <= y <= rechteck.yKoordinate + rechteck.hoehe):
                 rechteck.func(x, y)
+
+                # Gewinnbedingung
+                for i in self.rechtecke:
+                    if i.farbe != QColor(0, 180, 0):
+                        return True
+                self.zugehoerigesFenster.nextLevel()        # setzt ein, wenn man das Level gewonnen hat
                 return True
         return False
 
@@ -65,9 +74,11 @@ class Window(QWidget):
         self.wW = 800       # wW = windowWidth
         self.setGeometry(1200, 150, self.wW, self.wW)
         self.setWindowTitle("Spaß mit grünem")
+        self.originalLevels = []
         self.levels = []
         self.levelCounter = 0
         self.maxLevel = -1
+        self.gewonnenAnzeige = False
 
         self.initalisierung()
         self.keyPressEvent = self.fn
@@ -83,6 +94,15 @@ class Window(QWidget):
         rect1 = QRect(self.wW / 2, self.wW / 40, self.wW / 20, self.wW / 20)
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
         painter.drawText(rect1, 0, str(self.levelCounter))
+
+        if self.gewonnenAnzeige:        # Kurzer Übergang zum nächsten Level, verschwindet nach 3 Sekunden
+            rect2 = QRect(self.wW / 2.5, self.wW / 2, self.wW / 2, self.wW / 2)
+            rect3 = QRect(self.wW / 1.75, self.wW / 2, self.wW / 2, self.wW / 2)
+            painter.drawText(rect2, 0, "Glückwunsch, du hast Level        geschafft")
+            painter.drawText(rect3, 0, str(self.levelCounter-1))
+            self.gewonnenAnzeige = False
+            QTimer.singleShot(3000, self.update)
+            return
 
         # Level zeichnen
         for rechteck in self.levels[self.levelCounter].rechtecke:
@@ -109,22 +129,32 @@ class Window(QWidget):
 
 
     def initalisierung(self):       # Anfaengliche Erstellung der Level
-        level0 = Levelstruktur()
+        level0 = Levelstruktur(self)
         for j in range(5):
             for i in range(5):
                 level0.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
                                                      self.wW / 16 + self.wW * (3 / 16) * j,
                                                      self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
 
-        level1 = Levelstruktur()
+        level1 = Levelstruktur(self)
         for j in range(3):
             for i in range(2):
                 level1.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * (i + 2),
                                                      self.wW / 12 + self.wW * (3 / 16) * (j + 2),
                                                      self.wW / 8, self.wW / 8, QColor(90, 0, 0)))
 
+        self.originalLevels = [level0, level1]
         self.levels = [level0, level1]
 
+    def levelReset(self):
+        self.levels[self.levelCounter] = self.originalLevels[self.levelCounter]
+
+    def nextLevel(self):
+        self.levelCounter += 1
+        self.gewonnenAnzeige = True
+
+    def test(self):
+        print("hey")
 
 
 

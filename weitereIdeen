@@ -8,3 +8,10 @@ self.timer.start()
 - in nächstes Level rein
 - Funktionen in Rechteck um das Rechteck verschwinden zu lassen etc
 - Funktionen bei einzelnen berühren der Rechtecke (in extra functionsBib?)
+
+
+
+self.timer = QTimer()
+        self.timer.timeout.connect(self.next_player)
+        self.timer.setInterval(2000)
+        self.timer.start(20000)
