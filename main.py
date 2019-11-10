@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
-
+import copy
+import functionsBib
 
 
 
@@ -15,16 +16,17 @@ class Rechteck:
         self.hoehe = hoehe
         self.farbe = farbe
         self.zugehoerigesLevel = None
-        self.func = self.func1
+        self.func = functionsBib.heyho
 
-
-    def func1(self, x, y):            # Funktion, die ausgeführt wird, wenn das Rechteck geklickt wird
+    # grundlegende Funktionen
+    def gruen_machen(self):
         self.farbe = QColor(0, 180, 0)
-        self.func = self.func2
 
-
-    def func2(self, x, y):
+    def nothing(self, n1, n2, n3):
         pass
+
+    def level_zuruecksetzen(self, n1, n2, n3):
+        self.zugehoerigesLevel.zugehoerigesFenster.levelReset()
 
 
 class Kreis:
@@ -52,7 +54,7 @@ class Levelstruktur:
         for rechteck in self.rechtecke:
             if (rechteck.xKoordinate <= x <= rechteck.xKoordinate + rechteck.weite) and (
                     rechteck.yKoordinate <= y <= rechteck.yKoordinate + rechteck.hoehe):
-                rechteck.func(x, y)
+                rechteck.func(rechteck, x, y)
 
                 # Gewinnbedingung
                 for i in self.rechtecke:
@@ -61,6 +63,14 @@ class Levelstruktur:
                 self.zugehoerigesFenster.nextLevel()        # setzt ein, wenn man das Level gewonnen hat
                 return True
         return False
+
+    def kopieren(self):
+        neue = Levelstruktur(self.zugehoerigesFenster)
+        for rec in self.rechtecke:
+            neue.rechteck_hinzufuegen(Rechteck(rec.xKoordinate, rec.yKoordinate, rec.weite, rec.hoehe, rec.farbe))
+        for kreis in self.kreise:
+            pass
+        return neue
 
 
 
@@ -77,7 +87,7 @@ class Window(QWidget):
         self.originalLevels = []
         self.levels = []
         self.levelCounter = 0
-        self.maxLevel = -1
+        self.maxLevel = 1
         self.gewonnenAnzeige = False
 
         self.initalisierung()
@@ -95,7 +105,12 @@ class Window(QWidget):
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
         painter.drawText(rect1, 0, str(self.levelCounter))
 
-        if self.gewonnenAnzeige:        # Kurzer Übergang zum nächsten Level, verschwindet nach 3 Sekunden
+        if self.gewonnenAnzeige:
+            if self.levelCounter > self.maxLevel:
+                print("Glueckwunsch, du hast alle Level abgeschlossen")
+                self.close()
+
+            # Kurzer Übergang zum nächsten Level, verschwindet nach 3 Sekunden
             rect2 = QRect(self.wW / 2.5, self.wW / 2, self.wW / 2, self.wW / 2)
             rect3 = QRect(self.wW / 1.75, self.wW / 2, self.wW / 2, self.wW / 2)
             painter.drawText(rect2, 0, "Glückwunsch, du hast Level        geschafft")
@@ -143,19 +158,23 @@ class Window(QWidget):
                                                      self.wW / 12 + self.wW * (3 / 16) * (j + 2),
                                                      self.wW / 8, self.wW / 8, QColor(90, 0, 0)))
 
+        level2 = Levelstruktur(self)
+        for j in range(5):
+            for i in range(5):
+                level2.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
+                                                     self.wW / 16 + self.wW * (3 / 16) * j,
+                                                     self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
+
+
         self.originalLevels = [level0, level1]
-        self.levels = [level0, level1]
+        self.levels = [level0.kopieren(), level1.kopieren()]
 
     def levelReset(self):
-        self.levels[self.levelCounter] = self.originalLevels[self.levelCounter]
+        self.levels[self.levelCounter] = self.originalLevels[self.levelCounter].kopieren()
 
     def nextLevel(self):
         self.levelCounter += 1
         self.gewonnenAnzeige = True
-
-    def test(self):
-        print("hey")
-
 
 
 

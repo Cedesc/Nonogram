@@ -5,9 +5,10 @@ self.timer.timeout.connect(self.turn)
 self.timer.start()
 
 
-- in nächstes Level rein
+- maximales level bestimmen und Programm dann schließen
 - Funktionen in Rechteck um das Rechteck verschwinden zu lassen etc
 - Funktionen bei einzelnen berühren der Rechtecke (in extra functionsBib?)
+- fehlt destructor?
 
 
 
