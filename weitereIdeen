@@ -5,8 +5,8 @@ self.timer.timeout.connect(self.turn)
 self.timer.start()
 
 
-- maximales level bestimmen und Programm dann schließen
-- Funktionen in Rechteck um das Rechteck verschwinden zu lassen etc
+- bei Erfolg das schließen des Programms schöner machen
+- größere Schrift in QPainter
 - Funktionen bei einzelnen berühren der Rechtecke (in extra functionsBib?)
 - fehlt destructor?
 

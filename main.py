@@ -31,9 +31,23 @@ class Rechteck:
 
 class Kreis:
 
-    def __init__(self):
+    def __init__(self, xKoordinate, yKoordinate, weite, hoehe, farbe):
+        self.xKoordinate = xKoordinate
+        self.yKoordinate = yKoordinate
+        self.weite = weite
+        self.hoehe = hoehe
+        self.farbe = farbe
+        self.zugehoerigesLevel = None
+        self.func = functionsBib.heyho2
+
+    def gruen_machen(self):
+        self.farbe = QColor(0, 180, 0)
+
+    def nothing(self, n1, n2, n3):#
         pass
 
+    def level_zuruecksetzen(self, n1, n2, n3):
+        self.zugehoerigesLevel.zugehoerigesFenster.levelReset()
 
 
 class Levelstruktur:
@@ -47,29 +61,50 @@ class Levelstruktur:
         self.rechtecke.append(rechteck)
         rechteck.zugehoerigesLevel = self
 
+    def kreis_hinzufuegen(self, kreis):
+        self.kreise.append(kreis)
+        kreis.zugehoerigesLevel = self
+
     def weiteresZeichnen(self, painterF):             # Funktion, die Nicht-Rechtecke und Nicht-Kreise zeichnet.
         pass
 
+    def gewinnbedingung(self):
+        # Gewinnbedingung: Jedes Rechteck und jeder Kreis wird auf seine Farbe ueberprueft
+        for i in self.rechtecke:
+            if i.farbe != QColor(0, 180, 0):
+                return False
+        for j in self.kreise:
+            if j.farbe != QColor(0, 180, 0):
+                return False
+        return True
+
     def beruehrt(self, x, y):
+
+        for kreis in self.kreise:
+            if (kreis.xKoordinate <= x <= kreis.xKoordinate + kreis.weite) and (
+                    kreis.yKoordinate <= y <= kreis.yKoordinate + kreis.hoehe):
+                kreis.func(kreis, x, y)
+
+                if self.gewinnbedingung():      # setzt ein, wenn man das Level gewonnen hat
+                    self.zugehoerigesFenster.nextLevel()
+                return True
+
         for rechteck in self.rechtecke:
             if (rechteck.xKoordinate <= x <= rechteck.xKoordinate + rechteck.weite) and (
                     rechteck.yKoordinate <= y <= rechteck.yKoordinate + rechteck.hoehe):
                 rechteck.func(rechteck, x, y)
 
-                # Gewinnbedingung
-                for i in self.rechtecke:
-                    if i.farbe != QColor(0, 180, 0):
-                        return True
-                self.zugehoerigesFenster.nextLevel()        # setzt ein, wenn man das Level gewonnen hat
+                if self.gewinnbedingung():      # setzt ein, wenn man das Level gewonnen hat
+                    self.zugehoerigesFenster.nextLevel()
                 return True
         return False
 
-    def kopieren(self):
+    def kopieren(self):     # kopiert die Levelstruktur, deepcopy hat nicht funktioniert
         neue = Levelstruktur(self.zugehoerigesFenster)
         for rec in self.rechtecke:
             neue.rechteck_hinzufuegen(Rechteck(rec.xKoordinate, rec.yKoordinate, rec.weite, rec.hoehe, rec.farbe))
         for kreis in self.kreise:
-            pass
+            neue.kreis_hinzufuegen(Kreis(kreis.xKoordinate, kreis.yKoordinate, kreis.weite, kreis.hoehe, kreis.farbe))
         return neue
 
 
@@ -87,7 +122,7 @@ class Window(QWidget):
         self.originalLevels = []
         self.levels = []
         self.levelCounter = 0
-        self.maxLevel = 1
+        self.maxLevel = 2
         self.gewonnenAnzeige = False
 
         self.initalisierung()
@@ -116,7 +151,7 @@ class Window(QWidget):
             painter.drawText(rect2, 0, "Glückwunsch, du hast Level        geschafft")
             painter.drawText(rect3, 0, str(self.levelCounter-1))
             self.gewonnenAnzeige = False
-            QTimer.singleShot(3000, self.update)
+            QTimer.singleShot(1500, self.update)
             return
 
         # Level zeichnen
@@ -125,7 +160,10 @@ class Window(QWidget):
                              rechteck.weite, rechteck.hoehe, rechteck.farbe)
 
         for kreis in self.levels[self.levelCounter].kreise:
-            pass
+            painter.setPen(QPen(kreis.farbe, 1, Qt.SolidLine))
+            painter.setBrush(kreis.farbe)
+            painter.drawEllipse(kreis.xKoordinate, kreis.yKoordinate,
+                             kreis.weite, kreis.hoehe)
 
         self.levels[self.levelCounter].weiteresZeichnen(painter)
 
@@ -133,6 +171,11 @@ class Window(QWidget):
     def fn(self, e):
         if e.key() == Qt.Key_Left:
             print("du hast links gedrueckt")
+
+        """ R druecken um Level neuzustarten """
+        if e.key() == Qt.Key_R:
+            self.levelReset()
+            self.update()
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -145,29 +188,30 @@ class Window(QWidget):
 
     def initalisierung(self):       # Anfaengliche Erstellung der Level
         level0 = Levelstruktur(self)
-        for j in range(5):
-            for i in range(5):
+        for j in range(3):
+            for i in range(2):
                 level0.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
                                                      self.wW / 16 + self.wW * (3 / 16) * j,
                                                      self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
 
         level1 = Levelstruktur(self)
-        for j in range(3):
-            for i in range(2):
+        for j in range(2):
+            for i in range(1):
                 level1.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * (i + 2),
                                                      self.wW / 12 + self.wW * (3 / 16) * (j + 2),
-                                                     self.wW / 8, self.wW / 8, QColor(90, 0, 0)))
+                                                     self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
 
-        level2 = Levelstruktur(self)
-        for j in range(5):
-            for i in range(5):
-                level2.rechteck_hinzufuegen(Rechteck(self.wW / 16 + self.wW * (3 / 16) * i,
+        level00 = Levelstruktur(self)
+        # level00.kreis_hinzufuegen(Kreis(200, 200, 50, 50, QColor(0, 90, 0)))
+        for j in range(3):
+            for i in range(2):
+                level00.kreis_hinzufuegen(Kreis(self.wW / 16 + self.wW * (3 / 16) * i,
                                                      self.wW / 16 + self.wW * (3 / 16) * j,
                                                      self.wW / 8, self.wW / 8, QColor(0, 90, 0)))
 
 
-        self.originalLevels = [level0, level1]
-        self.levels = [level0.kopieren(), level1.kopieren()]
+        self.originalLevels = [level0, level00, level1]  # alle Level separat nochmals abspeichern fuers zuruecksetzen
+        self.levels = [level0.kopieren(), level00.kopieren(), level1.kopieren()]
 
     def levelReset(self):
         self.levels[self.levelCounter] = self.originalLevels[self.levelCounter].kopieren()
