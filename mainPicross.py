@@ -11,12 +11,19 @@ Erklaerung:
 """
 
 """ Beispiel-Level ist 6x5 """
-beispiellevel = [ [0,0,0,1,0],
-                  [0,0,1,1,1],
-                  [1,1,1,0,1],
-                  [0,0,0,0,0],
-                  [0,0,1,0,0],
-                  [0,0,1,1,1]]
+beispiellevel = [ [0,1,1,1,1,1,0],
+                  [0,1,0,1,0,1,0],
+                  [0,1,0,1,0,1,0],
+                  [0,1,1,1,1,1,0],
+                  [0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0],
+                  [1,0,0,0,0,0,1],
+                  [1,1,0,1,0,1,1],
+                  [0,1,1,0,1,1,0]]
 
 def levelAnzeigen(level):
     for zeile in level:
@@ -43,6 +50,7 @@ class Window(QWidget):
 
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
+        self.loesungAnzeigen()
 
 
         self.keyPressEvent = self.fn
@@ -107,17 +115,27 @@ class Window(QWidget):
 
 
         """ Rechtecke einzeichnen """
+        painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
         for i in range(self.spalten):
 
             for j in range(self.reihen):
 
-                if self.level[i][j]:
+                if self.level[i][j] == 1:
                     painter.fillRect(self.levelKoordinaten[i][j][0][0],
                                      self.levelKoordinaten[i][j][0][1],
-                                     self.levelKoordinaten[i][j][1][0] - self.levelKoordinaten[i][j][0][0],
-                                     self.levelKoordinaten[i][j][1][1] - self.levelKoordinaten[i][j][0][1],
-                                     QColor(30,0,60))
+                                     self.levelKoordinaten[i][j][1][0] - self.levelKoordinaten[i][j][0][0], # hoehe
+                                     self.levelKoordinaten[i][j][1][1] - self.levelKoordinaten[i][j][0][1], # weite
+                                     QColor(0,0,0))
 
+                if self.level[i][j] == -1:
+                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][0][1],
+                                     self.levelKoordinaten[i][j][1][0],
+                                     self.levelKoordinaten[i][j][1][1])
+                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][1][1],
+                                     self.levelKoordinaten[i][j][1][0],
+                                     self.levelKoordinaten[i][j][0][1])
 
 
     def fn(self, e):
@@ -141,8 +159,14 @@ class Window(QWidget):
             for j in range(self.reihen):
 
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
-                and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ):
-                    self.level[i][j] = 1
+                and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
+                and self.level[i][j] == 0:
+                    if self.loesung[i][j] == 0:
+                        print("falsch")
+                        self.level[i][j] = -1
+                    elif self.loesung[i][j] == 1:
+                        print("richtig")
+                        self.level[i][j] = 1
                     self.update()
 
 
@@ -189,6 +213,10 @@ class Window(QWidget):
 
     def hinweiseBerechnen(self):
         pass
+
+    def loesungAnzeigen(self):
+        self.level = self.loesung
+        self.update()
 
 
 
