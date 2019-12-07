@@ -111,7 +111,7 @@ class Window(QWidget):
 
             for j in range(self.reihen):
 
-                if self.loesung[i][j]:          # level statt loesung!
+                if self.level[i][j]:
                     painter.fillRect(self.levelKoordinaten[i][j][0][0],
                                      self.levelKoordinaten[i][j][0][1],
                                      self.levelKoordinaten[i][j][1][0] - self.levelKoordinaten[i][j][0][0],
@@ -135,6 +135,17 @@ class Window(QWidget):
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
         print("               ", pos.x(), pos.y())
+
+        for i in range(self.spalten):
+
+            for j in range(self.reihen):
+
+                if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
+                and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ):
+                    self.level[i][j] = 1
+                    self.update()
+
+
 
 
     def leeresLevelErstellen(self):
