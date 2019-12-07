@@ -14,9 +14,9 @@ Erklaerung:
 beispiellevel = [ [0,0,0,1,0],
                   [0,0,1,1,1],
                   [1,1,1,0,1],
-                  [1,1,0,0,1],
+                  [0,0,0,0,0],
                   [0,0,1,0,0],
-                  [0,0,0,0,0]]
+                  [0,0,1,1,1]]
 
 def levelAnzeigen(level):
     for zeile in level:
@@ -107,7 +107,16 @@ class Window(QWidget):
 
 
         """ Rechtecke einzeichnen """
-        pass
+        for i in range(self.spalten):
+
+            for j in range(self.reihen):
+
+                if self.loesung[i][j]:          # level statt loesung!
+                    painter.fillRect(self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][0][1],
+                                     self.levelKoordinaten[i][j][1][0] - self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][1][1] - self.levelKoordinaten[i][j][0][1],
+                                     QColor(30,0,60))
 
 
 
