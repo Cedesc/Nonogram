@@ -4,12 +4,19 @@ from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterP
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 
 
-""" Beispiel-Level ist 5x5 """
+
+""" 
+Erklaerung: 
+    - 3 geschachtelte Listen mit Tiefe 2, 1. mit der Loesung, 2. mit dem momentanen Stand, 3. mit Koordinaten
+"""
+
+""" Beispiel-Level ist 6x5 """
 beispiellevel = [ [0,0,0,1,0],
                   [0,0,1,1,1],
                   [1,1,1,0,1],
                   [1,1,0,0,1],
-                  [0,0,1,0,0]]
+                  [0,0,1,0,0],
+                  [0,0,0,0,0]]
 
 def levelAnzeigen(level):
     for zeile in level:
@@ -27,15 +34,16 @@ class Window(QWidget):
         self.wH = 800       # wH = windowHeight
         self.setGeometry(500, 50, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.level = beispiellevel
+        self.loesung = beispiellevel
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
-        self.reihen = len(self.level)
-        self.spalten = len(self.level[0])
+        self.spalten = len(self.loesung)
+        self.reihen = len(self.loesung[0])
 
-        self.reihen = 15
-        self.spalten = 15
+        self.level = self.leeresLevelErstellen()
+        self.levelKoordinaten = self.koordinatenBestimmen()
+
 
         self.keyPressEvent = self.fn
 
@@ -52,50 +60,54 @@ class Window(QWidget):
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
 
         # vertikale Linien
-        y = (self.wW - 2 * self.nachRechts) // self.reihen
+        breite = (self.wW - 2 * self.nachRechts) // self.reihen
         for verschiebung in range(self.reihen + 1):
             if verschiebung == 0 or verschiebung == self.reihen:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
-                painter.drawLine(self.nachRechts + y * verschiebung,
+                painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
-                                 self.nachRechts + y * verschiebung,
+                                 self.nachRechts + breite * verschiebung,
                                  self.wH - self.nachUnten // 2)
                 painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
             elif verschiebung % 5 == 0:
                 painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
-                painter.drawLine(self.nachRechts + y * verschiebung,
+                painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
-                                 self.nachRechts + y * verschiebung,
+                                 self.nachRechts + breite * verschiebung,
                                  self.wH - self.nachUnten // 2)
                 painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
             else:
-                painter.drawLine(self.nachRechts + y * verschiebung,
+                painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
-                                 self.nachRechts + y * verschiebung,
+                                 self.nachRechts + breite * verschiebung,
                                  self.wH - self.nachUnten // 2)
 
         # horizontale Linien
-        x = (self.wH - 2 * self.nachUnten) // self.spalten
+        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
         for verschiebung in range(self.spalten + 1):
             if verschiebung == 0 or verschiebung == self.spalten:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
-                                 self.nachUnten + x * verschiebung,
+                                 self.nachUnten + hoehe * verschiebung,
                                  self.wW - self.nachRechts // 2,
-                                 self.nachUnten + x * verschiebung)
+                                 self.nachUnten + hoehe * verschiebung)
                 painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
             elif verschiebung % 5 == 0:
                 painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
-                                 self.nachUnten + x * verschiebung,
+                                 self.nachUnten + hoehe * verschiebung,
                                  self.wW - self.nachRechts // 2,
-                                 self.nachUnten + x * verschiebung)
+                                 self.nachUnten + hoehe * verschiebung)
                 painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
             else:
                 painter.drawLine(self.nachRechts // 2,
-                                self.nachUnten + x * verschiebung,
+                                self.nachUnten + hoehe * verschiebung,
                                 self.wW - self.nachRechts // 2,
-                                self.nachUnten + x * verschiebung)
+                                self.nachUnten + hoehe * verschiebung)
+
+
+        """ Rechtecke einzeichnen """
+        pass
 
 
 
@@ -116,8 +128,43 @@ class Window(QWidget):
         print("               ", pos.x(), pos.y())
 
 
+    def leeresLevelErstellen(self):
+
+        result = []
+        for i in range(self.spalten):
+            reihe = []
+            for j in range(self.reihen):
+                reihe.append(0)
+            result.append(reihe)
+        return result
+
+    def koordinatenBestimmen(self):
+
+        # Idee: Fuer jeden Eintrag jeweils linke obere und rechte untere Koordinate für ein Rechteck bestimmen.
+        #       Diese als Tupel von zwei Tupeln (2 Punkte, also 4 Koordinaten) in geschachtelter Liste so platzieren,
+        #       dass sie die gleichen Indizes haben, wie die zugehoerigen Werte
+        result = []
+
+        # reine Vorberechnung
+        breite = (self.wW - 2 * self.nachRechts) // self.reihen
+        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
+
+        for i in range(self.spalten):
+            reihe = []
+            for j in range(self.reihen):
+
+                punktLinksOben = (self.nachRechts + breite * j, self.nachUnten + hoehe * i)
+                punktRechtsUnten = (self.nachRechts + breite * (j+1), self.nachUnten + hoehe * (i+1))
+
+                reihe.append( ( punktLinksOben , punktRechtsUnten ) )
+            result.append(reihe)
+        return result
+
 
     def levelReset(self):
+        pass
+
+    def eckkoordinatenBerechnen(self):
         pass
 
     def hinweiseBerechnen(self):
