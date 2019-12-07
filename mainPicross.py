@@ -29,13 +29,13 @@ class Window(QWidget):
         self.setWindowTitle("Picross")
         self.level = beispiellevel
 
-        self.nachUnten = 50     # Gesamtverschiebung nach unten
-        self.nachRechts = 50    # Gesamtverschiebung nach rechts
-        self.laengeVertikal = len(self.level)
-        self.laengeHorizontal = len(self.level[0])
+        self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
+        self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
+        self.reihen = len(self.level)
+        self.spalten = len(self.level[0])
 
-        self.laengeVertikal = 15
-        self.laengeHorizontal = 15
+        self.reihen = 15
+        self.spalten = 15
 
         self.keyPressEvent = self.fn
 
@@ -45,44 +45,57 @@ class Window(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        # Hintergrund
+        ''' Hintergrund '''
         painter.fillRect(0, 0, self.wW, self.wH, QColor(205, 205, 205))
 
-        # "Netz" aufbauen
+        ''' Netz aufbauen '''
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
-        # vertikal
-        for verschiebung in range(self.laengeVertikal + 1):
-            """if verschiebung == 0 or verschiebung == self.laengeVertikal:
-                painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
-                painter.drawLine((self.nachRechts + 50) + 60 * verschiebung, self.nachUnten,
-                                 (self.nachRechts + 50) + 60 * verschiebung,
-                                 self.nachUnten + (self.laengeHorizontal + 1) * 60 + 40)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
-            elif verschiebung % 5 == 0:
-                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
-                painter.drawLine((self.nachRechts + 50) + 60 * verschiebung, self.nachUnten,
-                                 (self.nachRechts + 50) + 60 * verschiebung, self.nachUnten + (self.laengeHorizontal + 1) * 60 + 40)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))"""
-            #else:
-            painter.drawLine((self.nachRechts + self.wW // 16) + int(self.wW // 13 * 10 / 15) * verschiebung, self.nachUnten,
-                                   (self.nachRechts + self.wW // 16) + int(self.wW // 13 * 10 / 15) * verschiebung, self.nachUnten + (self.laengeHorizontal + 1) * int(self.wH // 13 * 10 / 15) + (self.wH // 20))
-        # horizontal
-        for verschiebung in range(self.laengeHorizontal + 1):
-            """if verschiebung == 0 or verschiebung == self.laengeHorizontal:
-                painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
-                painter.drawLine(self.nachRechts, (self.nachUnten + 50) + 60 * verschiebung,
-                                 self.nachRechts + (self.laengeVertikal + 1) * 60 + 40,
-                                 (self.nachUnten + 50) + 60 * verschiebung)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
-            elif verschiebung % 5 == 0:
-                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
-                painter.drawLine(self.nachRechts, (self.nachUnten + 50) + 60 * verschiebung,
-                                 self.nachRechts + (self.laengeVertikal + 1) * 60 + 40, (self.nachUnten + 50) + 60 * verschiebung)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))"""
-            #else:
-            painter.drawLine(self.nachRechts, (self.nachUnten + (self.wH // 16)) + int(self.wH // 13 * 10 / 15) * verschiebung,
-                                   self.nachRechts + (self.laengeVertikal + 1) * int(self.wW // 13 * 10 / 15) + (self.wW // 20), (self.nachUnten + (self.wH // 16)) + int(self.wH // 13 * 10 / 15) * verschiebung)
 
+        # vertikale Linien
+        y = (self.wW - 2 * self.nachRechts) // self.reihen
+        for verschiebung in range(self.reihen + 1):
+            if verschiebung == 0 or verschiebung == self.reihen:
+                painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
+                painter.drawLine(self.nachRechts + y * verschiebung,
+                                 self.nachUnten // 2,
+                                 self.nachRechts + y * verschiebung,
+                                 self.wH - self.nachUnten // 2)
+                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+            elif verschiebung % 5 == 0:
+                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
+                painter.drawLine(self.nachRechts + y * verschiebung,
+                                 self.nachUnten // 2,
+                                 self.nachRechts + y * verschiebung,
+                                 self.wH - self.nachUnten // 2)
+                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+            else:
+                painter.drawLine(self.nachRechts + y * verschiebung,
+                                 self.nachUnten // 2,
+                                 self.nachRechts + y * verschiebung,
+                                 self.wH - self.nachUnten // 2)
+
+        # horizontale Linien
+        x = (self.wH - 2 * self.nachUnten) // self.spalten
+        for verschiebung in range(self.spalten + 1):
+            if verschiebung == 0 or verschiebung == self.spalten:
+                painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
+                painter.drawLine(self.nachRechts // 2,
+                                 self.nachUnten + x * verschiebung,
+                                 self.wW - self.nachRechts // 2,
+                                 self.nachUnten + x * verschiebung)
+                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+            elif verschiebung % 5 == 0:
+                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
+                painter.drawLine(self.nachRechts // 2,
+                                 self.nachUnten + x * verschiebung,
+                                 self.wW - self.nachRechts // 2,
+                                 self.nachUnten + x * verschiebung)
+                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+            else:
+                painter.drawLine(self.nachRechts // 2,
+                                self.nachUnten + x * verschiebung,
+                                self.wW - self.nachRechts // 2,
+                                self.nachUnten + x * verschiebung)
 
 
 
@@ -90,7 +103,7 @@ class Window(QWidget):
         if e.key() == Qt.Key_Left:
             print("du hast links gedrueckt")
 
-        """ R druecken um Level neuzustarten """
+        # R druecken um Level neuzustarten
         if e.key() == Qt.Key_R:
             self.update()
 
@@ -105,6 +118,9 @@ class Window(QWidget):
 
 
     def levelReset(self):
+        pass
+
+    def hinweiseBerechnen(self):
         pass
 
 
