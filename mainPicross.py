@@ -58,6 +58,10 @@ class Window(QWidget):
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
 
+        self.hinweiseSpalten = 0
+        self.hinweiseReihen = self.hinweiseErstellen()
+
+        self.loesungAnzeigen()
 
         self.keyPressEvent = self.fn
 
@@ -144,6 +148,20 @@ class Window(QWidget):
                                      self.levelKoordinaten[i][j][0][1])
 
 
+        """ Hinweise einbringen """
+        # Idee: jeweils Mitte von zwei schon gezeichneten Linien nehmen
+
+        schriftgroesse = 0
+        x = 0
+        y = 0
+        hoehe = hoehe
+        breite = breite
+
+        painter.setFont(QFont("Arial", 15))
+        painter.drawText(0, 100 + 40 , breite, hoehe, Qt.AlignLeft , "1|2|31")
+        # painter.drawText(0, 100 + 40 , 100, 20, Qt.AlignCenter , "1|2|31")
+
+
     def fn(self, e):
         if e.key() == Qt.Key_Left:
             print("du hast links gedrueckt")
@@ -226,16 +244,31 @@ class Window(QWidget):
     def eckkoordinatenBerechnen(self):
         pass
 
-    def hinweiseBerechnen(self):
+    def hinweiseNeuBerechnen(self):
         pass
 
     def loesungAnzeigen(self):
         self.level = self.loesung
         self.update()
 
-    def loesungPruefen(self):
-        if self.loesung == self.level:
-            print("Glueckwunsch, du hast es geloest!")
+
+    def hinweiseErstellen(self):
+        # Hinweise fuer Reihen erstellen
+        linksHinweise = []
+        for i in range(self.spalten):
+            zaehler = 0
+            reiheHinweise = []
+            for j in range(self.reihen):
+                if self.loesung[i][j] == 1:
+                    zaehler += 1
+                else:
+                    if zaehler != 0:
+                        reiheHinweise.append(zaehler)
+                    zaehler = 0
+            if not reiheHinweise or zaehler != 0:       # wenn kein Feld oder das letzte Feld schwarz ist
+                reiheHinweise.append(zaehler)
+            linksHinweise.append(reiheHinweise)
+        return linksHinweise
 
 
 
