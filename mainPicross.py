@@ -11,7 +11,14 @@ Erklaerung:
 """
 
 """ Beispiel-Level ist 6x5 """
-beispiellevel = [ [0,1,1,1,1,1,0],
+beispiellevel = [[0,1,0,1,0],
+                 [0,0,0,0,0],
+                 [0,1,1,0,1],
+                 [0,0,0,0,0],
+                 [1,0,0,1,1],
+                 [1,0,0,0,0]]
+
+beispiellevel2 = [[0,1,1,1,1,1,0],
                   [0,1,0,1,0,1,0],
                   [0,1,0,1,0,1,0],
                   [0,1,1,1,1,1,0],
@@ -50,7 +57,6 @@ class Window(QWidget):
 
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
-        self.loesungAnzeigen()
 
 
         self.keyPressEvent = self.fn
@@ -154,10 +160,9 @@ class Window(QWidget):
         pos = QMouseEvent.pos()
         print("               ", pos.x(), pos.y())
 
+        """ Eingaben moeglich machen """
         for i in range(self.spalten):
-
             for j in range(self.reihen):
-
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
                 and self.level[i][j] == 0:
@@ -168,6 +173,16 @@ class Window(QWidget):
                         print("richtig")
                         self.level[i][j] = 1
                     self.update()
+
+                    """ Ueberpruefen ob Level geschafft ist """
+                    gewonnen = True
+                    for i in range(self.spalten):
+                        for j in range(self.reihen):
+                            if self.loesung[i][j] == 1 and self.level[i][j] != 1:
+                                gewonnen = False
+                    if gewonnen:
+                        print("Glueckwunsch, du hast es geschafft!")
+
 
 
 
@@ -218,6 +233,9 @@ class Window(QWidget):
         self.level = self.loesung
         self.update()
 
+    def loesungPruefen(self):
+        if self.loesung == self.level:
+            print("Glueckwunsch, du hast es geloest!")
 
 
 
