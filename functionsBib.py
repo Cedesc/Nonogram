@@ -9,7 +9,6 @@ def heyho(self, x, y):
 
 
 def heyho2(self, x, y):
-    print("jap es klappt")
     self.gruen_machen()
     self.func = self.level_zuruecksetzen
     return
