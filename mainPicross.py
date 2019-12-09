@@ -32,6 +32,20 @@ beispiellevel2 = [[0,1,1,1,1,1,0],
                   [1,1,0,1,0,1,1],
                   [0,1,1,0,1,1,0]]
 
+beispiellevel3 = [[0,1,1,1,1,1,0,
+                  0,1,0,1,0,1,0],
+                  [0,1,0,1,0,1,0,
+                  0,1,1,1,1,1,0],
+                  [0,1,0,0,0,1,0,
+                  0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0,
+                  0,1,0,0,0,1,0],
+                  [0,1,0,0,0,1,0,
+                  0,1,0,0,0,1,0],
+                  [1,0,0,0,0,0,1,
+                  1,1,0,1,0,1,1]]
+
+
 def levelAnzeigen(level):
     for zeile in level:
         print(zeile)
@@ -48,7 +62,7 @@ class Window(QWidget):
         self.wH = 800       # wH = windowHeight
         self.setGeometry(500, 50, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = beispiellevel
+        self.loesung = beispiellevel2
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -58,10 +72,10 @@ class Window(QWidget):
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
 
-        self.hinweiseSpalten = 0
-        self.hinweiseReihen = self.hinweiseErstellen()
+        self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
 
-        self.loesungAnzeigen()
+
+        #self.loesungAnzeigen()
 
         self.keyPressEvent = self.fn
 
@@ -149,17 +163,40 @@ class Window(QWidget):
 
 
         """ Hinweise einbringen """
-        # Idee: jeweils Mitte von zwei schon gezeichneten Linien nehmen
+        # Idee: an den gezeichneten Linien orientieren
+        painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+        schriftgroesse = hoehe // 6
+        painter.setFont(QFont("Arial", schriftgroesse))
 
-        schriftgroesse = 0
-        x = 0
-        y = 0
-        hoehe = hoehe
-        breite = breite
+        # Reihen
+        # Schleife durchlaeuft self.spalten, da es an der Anzahl von in einer Spalte liegenden Feldern abhaengt,
+        # wie viele Reihen es gibt
+        for reihe in range(self.spalten):
+            if self.hinweiseReihen[reihe][1]:       # pruefen ob visible
+                painter.drawText(0, self.nachUnten + hoehe * (reihe+0.5) - schriftgroesse // 2 ,
+                                 self.nachRechts, hoehe, Qt.AlignHCenter , self.hinweiseReihen[reihe][0])
+            else:
+                painter.setPen(QColor(180,180,180))
+                painter.drawText(0, self.nachUnten + hoehe * (reihe + 0.5) - schriftgroesse // 2,
+                                 self.nachRechts, hoehe, Qt.AlignHCenter, self.hinweiseReihen[reihe][0])
+                painter.setPen(QColor(0, 0, 0))
 
-        painter.setFont(QFont("Arial", 15))
-        painter.drawText(0, 100 + 40 , breite, hoehe, Qt.AlignLeft , "1|2|31")
-        # painter.drawText(0, 100 + 40 , 100, 20, Qt.AlignCenter , "1|2|31")
+
+        # Spalten
+        # Schleife durchlaeuft self.reihen, da es an der Anzahl von in einer Reihe liegenden Feldern abhaengt,
+        # wie viele Spalten es gibt
+        for spalte in range(self.reihen):
+            if self.hinweiseSpalten[spalte][1]:     # pruefen ob visible
+                painter.drawText(self.nachRechts + breite * (spalte+0.5) - schriftgroesse // 2,
+                                 self.nachUnten - schriftgroesse * 7,
+                                 schriftgroesse * 3, schriftgroesse * 7, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
+            else:
+                painter.setPen(QColor(180,180,180))
+                painter.drawText(self.nachRechts + breite * (spalte + 0.5) - schriftgroesse // 2,
+                                 self.nachUnten - schriftgroesse * 7,
+                                 schriftgroesse * 3, schriftgroesse * 7, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
+                painter.setPen(QColor(0,0,0))
+
 
 
     def fn(self, e):
@@ -253,22 +290,58 @@ class Window(QWidget):
 
 
     def hinweiseErstellen(self):
+
+        # Hinweise fuer Spalten erstellen
+        obenHinweise = []
+        for i in range(self.reihen):
+            zaehler = 0
+            spalteHinweise = ""
+            for j in range(self.spalten):
+                if self.loesung[j][i] == 1:
+                    zaehler += 1
+                else:
+                    if zaehler != 0:
+                        if spalteHinweise:
+                            spalteHinweise += "\n" + str(zaehler)
+                        else:
+                            spalteHinweise = str(zaehler)
+
+                    zaehler = 0
+            if not spalteHinweise and zaehler == 0:  # wenn kein Feld schwarz ist
+                spalteHinweise = "0"
+            if zaehler != 0:  # wenn das letzte Feld schwarz ist
+                if spalteHinweise:
+                    spalteHinweise += "\n" + str(zaehler)
+                else:
+                    spalteHinweise = str(zaehler)
+            obenHinweise.append([spalteHinweise, True])
+
         # Hinweise fuer Reihen erstellen
         linksHinweise = []
         for i in range(self.spalten):
             zaehler = 0
-            reiheHinweise = []
+            reiheHinweise = ""
             for j in range(self.reihen):
                 if self.loesung[i][j] == 1:
                     zaehler += 1
                 else:
                     if zaehler != 0:
-                        reiheHinweise.append(zaehler)
+                        if reiheHinweise:
+                            reiheHinweise += "  " + str(zaehler)
+                        else:
+                            reiheHinweise = str(zaehler)
+
                     zaehler = 0
-            if not reiheHinweise or zaehler != 0:       # wenn kein Feld oder das letzte Feld schwarz ist
-                reiheHinweise.append(zaehler)
-            linksHinweise.append(reiheHinweise)
-        return linksHinweise
+            if not reiheHinweise and zaehler == 0:   # wenn kein Feld schwarz ist
+                reiheHinweise = "0"
+            if zaehler != 0:       # wenn das letzte Feld schwarz ist
+                if reiheHinweise:
+                    reiheHinweise += "  " + str(zaehler)
+                else:
+                    reiheHinweise = str(zaehler)
+            linksHinweise.append([reiheHinweise, True])
+
+        return obenHinweise, linksHinweise
 
 
 
