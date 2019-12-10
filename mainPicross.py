@@ -74,6 +74,8 @@ class Window(QWidget):
 
         self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
 
+        self.blockenAktiv = False
+
 
         #self.loesungAnzeigen()
 
@@ -152,6 +154,18 @@ class Window(QWidget):
                                      QColor(0,0,0))
 
                 if self.level[i][j] == -1:
+                    painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
+                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][0][1],
+                                     self.levelKoordinaten[i][j][1][0],
+                                     self.levelKoordinaten[i][j][1][1])
+                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
+                                     self.levelKoordinaten[i][j][1][1],
+                                     self.levelKoordinaten[i][j][1][0],
+                                     self.levelKoordinaten[i][j][0][1])
+
+                if self.level[i][j] == 2:
+                    painter.setPen(QPen(QColor(100, 100, 100), 2, Qt.SolidLine))
                     painter.drawLine(self.levelKoordinaten[i][j][0][0],
                                      self.levelKoordinaten[i][j][0][1],
                                      self.levelKoordinaten[i][j][1][0],
@@ -210,6 +224,12 @@ class Window(QWidget):
         if e.key() == Qt.Key_Escape:
             self.close()
 
+        if e.key() == Qt.Key_X:
+            self.blockenAktiv = True
+
+        if e.key() == Qt.Key_Y:
+            self.blockenAktiv = False
+
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
@@ -220,23 +240,32 @@ class Window(QWidget):
             for j in range(self.reihen):
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
-                and self.level[i][j] == 0:
-                    if self.loesung[i][j] == 0:
-                        print("falsch")
-                        self.level[i][j] = -1
-                    elif self.loesung[i][j] == 1:
-                        print("richtig")
-                        self.level[i][j] = 1
-                    self.update()
+                and (self.level[i][j] == 0 or self.level[i][j] == 2):
 
-                    """ Ueberpruefen ob Level geschafft ist """
-                    gewonnen = True
-                    for i in range(self.spalten):
-                        for j in range(self.reihen):
-                            if self.loesung[i][j] == 1 and self.level[i][j] != 1:
-                                gewonnen = False
-                    if gewonnen:
-                        print("Glueckwunsch, du hast es geschafft!")
+                    if self.blockenAktiv:   # Feld blocken
+                        if self.level[i][j] == 0:
+                            self.level[i][j] = 2
+                        elif self.level[i][j] == 2:
+                            self.level[i][j] = 0
+
+                    elif self.level[i][j] == 0:   # regulaer, wenn man was trifft und ungeblockt ist
+                        if self.loesung[i][j] == 0:
+                            print("falsch")
+                            self.level[i][j] = -1
+                        elif self.loesung[i][j] == 1:
+                            print("richtig")
+                            self.level[i][j] = 1
+
+                        """ Ueberpruefen ob Level geschafft ist """
+                        gewonnen = True
+                        for i in range(self.spalten):
+                            for j in range(self.reihen):
+                                if self.loesung[i][j] == 1 and self.level[i][j] != 1:
+                                    gewonnen = False
+                        if gewonnen:
+                            print("Glueckwunsch, du hast es geschafft!")
+
+                    self.update()
 
 
 
