@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import random
+import copy
 
 
 
@@ -88,10 +89,11 @@ class Window(QWidget):
 
         self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
 
-        self.blockenAktiv = False
+        self.gewonnen = False
 
 
         #self.loesungAnzeigen()
+
 
         self.keyPressEvent = self.fn
 
@@ -103,6 +105,10 @@ class Window(QWidget):
 
         ''' Hintergrund '''
         painter.fillRect(0, 0, self.wW, self.wH, QColor(205, 205, 205))
+        if self.gewonnen:
+            painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
+            self.gewinnAnimation()
+
 
         ''' Netz aufbauen '''
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
@@ -235,22 +241,9 @@ class Window(QWidget):
         if e.key() == Qt.Key_R:
             self.update()
 
+        # esc druecken um Level zu schliessen
         if e.key() == Qt.Key_Escape:
             self.close()
-
-        if e.key() == Qt.Key_X:
-            self.blockenAktiv = True
-
-        if e.key() == Qt.Key_Y:
-            self.blockenAktiv = False
-
-        if e.key() == Qt.Key_Control:
-            if self.blockenAktiv:
-                self.blockenAktiv = False
-                print("Blocken deaktiviert")
-            else:
-                self.blockenAktiv = True
-                print("Blocken aktiviert")
 
 
 
@@ -265,26 +258,26 @@ class Window(QWidget):
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
                 and (self.level[i][j] == 0 or self.level[i][j] == 2):
 
-                    if self.blockenAktiv:   # Feld blocken
+                    # Feld blocken
+                    if QMouseEvent.button() == Qt.RightButton:
                         if self.level[i][j] == 0:
                             self.level[i][j] = 2
                         elif self.level[i][j] == 2:
                             self.level[i][j] = 0
 
-                    elif self.level[i][j] == 0:   # regulaer, wenn man was trifft und ungeblockt ist
+                    # regulaer, wenn man was trifft und ungeblockt ist
+                    if QMouseEvent.button() == Qt.LeftButton and self.level[i][j] == 0:
                         if self.loesung[i][j] == 0:     # falsches Feld
                             self.level[i][j] = -1
                         elif self.loesung[i][j] == 1:
                             self.level[i][j] = 1        # richtiges Feld
 
                         """ Ueberpruefen ob Level geschafft ist """
-                        gewonnen = True
+                        self.gewonnen = True
                         for i in range(self.spalten):
                             for j in range(self.reihen):
                                 if self.loesung[i][j] == 1 and self.level[i][j] != 1:
-                                    gewonnen = False
-                        if gewonnen:
-                            print("Glueckwunsch, du hast es geschafft!")
+                                    self.gewonnen = False
 
                     self.update()
 
@@ -333,7 +326,7 @@ class Window(QWidget):
         pass
 
     def loesungAnzeigen(self):
-        self.level = self.loesung
+        self.level = copy.deepcopy(self.loesung)
         self.update()
 
 
@@ -391,6 +384,9 @@ class Window(QWidget):
 
         return obenHinweise, linksHinweise
 
+    def gewinnAnimation(self):
+        print("Glueckwunsch, du hast es geschafft!")
+        self.level = copy.deepcopy(self.loesung)
 
 
 app = QApplication(sys.argv)
