@@ -325,14 +325,6 @@ class Window(QWidget):
         self.gewonnen = False       # hebt Sperre auf, die Verhindert, dass man neu zeichnen kann
 
 
-    def eckkoordinatenBerechnen(self):
-        pass
-
-
-    def hinweiseNeuBerechnen(self):
-        pass
-
-
     def loesungAnzeigen(self):
         self.level = copy.deepcopy(self.loesung)
         self.update()
@@ -396,6 +388,15 @@ class Window(QWidget):
     def gewinnAnimation(self):
         print("Glueckwunsch, du hast es geschafft!")
         self.level = copy.deepcopy(self.loesung)
+
+
+    def hinweiseNeuBerechnen(self):
+        pass
+
+
+    def reihespalteabgeschlossen(self):
+        pass
+
 
 
 
