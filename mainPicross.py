@@ -10,9 +10,10 @@ import copy
 """ 
 Erklaerung: 
     - 3 geschachtelte Listen mit Tiefe 2, 1. mit der Loesung, 2. mit dem momentanen Stand, 3. mit Koordinaten
+    - linke Maustaste um Feld zu bestaetigen, rechte Maustaste um Feld zu blocken
 """
 
-""" Beispiel-Level ist 6x5 """
+""" Beispiel-Level """
 beispiellevel = [[0,1,1,1,0],
                  [0,0,1,0,0],
                  [0,1,1,0,1],
@@ -34,7 +35,8 @@ beispiellevel2 = [[0,1,1,1,1,1,0],
                   [1,1,0,1,0,1,1],
                   [0,1,1,0,1,1,0]]
 
-beispiellevel3 = [[0,1,1,1,1,1,0,
+beispiellevel3 = [
+                 [0,1,1,1,1,1,0,
                   0,1,0,1,0,1,0],
                   [0,1,0,1,0,1,0,
                   0,1,1,1,1,1,0],
@@ -239,6 +241,7 @@ class Window(QWidget):
 
         # R druecken um Level neuzustarten
         if e.key() == Qt.Key_R:
+            self.levelReset()
             self.update()
 
         # esc druecken um Level zu schliessen
@@ -293,6 +296,7 @@ class Window(QWidget):
             result.append(reihe)
         return result
 
+
     def koordinatenBestimmen(self):
 
         # Idee: Fuer jeden Eintrag jeweils linke obere und rechte untere Koordinate für ein Rechteck bestimmen.
@@ -317,13 +321,17 @@ class Window(QWidget):
 
 
     def levelReset(self):
-        pass
+        self.level = self.leeresLevelErstellen()
+        self.gewonnen = False       # hebt Sperre auf, die Verhindert, dass man neu zeichnen kann
+
 
     def eckkoordinatenBerechnen(self):
         pass
 
+
     def hinweiseNeuBerechnen(self):
         pass
+
 
     def loesungAnzeigen(self):
         self.level = copy.deepcopy(self.loesung)
@@ -384,9 +392,12 @@ class Window(QWidget):
 
         return obenHinweise, linksHinweise
 
+
     def gewinnAnimation(self):
         print("Glueckwunsch, du hast es geschafft!")
         self.level = copy.deepcopy(self.loesung)
+
+
 
 
 app = QApplication(sys.argv)
