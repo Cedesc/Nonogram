@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
+import random
 
 
 
@@ -11,12 +12,12 @@ Erklaerung:
 """
 
 """ Beispiel-Level ist 6x5 """
-beispiellevel = [[0,1,0,1,0],
-                 [0,0,0,0,0],
+beispiellevel = [[0,1,1,1,0],
+                 [0,0,1,0,0],
                  [0,1,1,0,1],
                  [0,0,0,0,0],
-                 [1,0,0,1,1],
-                 [1,0,0,0,0]]
+                 [1,0,1,1,1],
+                 [1,0,1,0,0]]
 
 beispiellevel2 = [[0,1,1,1,1,1,0],
                   [0,1,0,1,0,1,0],
@@ -51,7 +52,20 @@ def levelAnzeigen(level):
         print(zeile)
     return
 
-# levelAnzeigen(beispiellevel)
+
+def zufaelligesLevel(weite, hoehe):
+    resultlevel = []
+    for y in range(hoehe):
+        zeile = []
+        for x in range(weite):
+            zeile.append(random.randint(0,1))
+        resultlevel.append(zeile)
+    return resultlevel
+
+#beispiel = zufaelligesLevel(10,10)
+#levelAnzeigen(beispiel)
+
+
 
 class Window(QWidget):
 
@@ -62,7 +76,7 @@ class Window(QWidget):
         self.wH = 800       # wH = windowHeight
         self.setGeometry(500, 50, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = beispiellevel2
+        self.loesung = beispiellevel
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -230,10 +244,19 @@ class Window(QWidget):
         if e.key() == Qt.Key_Y:
             self.blockenAktiv = False
 
+        if e.key() == Qt.Key_Control:
+            if self.blockenAktiv:
+                self.blockenAktiv = False
+                print("Blocken deaktiviert")
+            else:
+                self.blockenAktiv = True
+                print("Blocken aktiviert")
+
+
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
-        print("               ", pos.x(), pos.y())
+        #print("               ", pos.x(), pos.y())     # zum ueberpruefen wo man klickt
 
         """ Eingaben moeglich machen """
         for i in range(self.spalten):
@@ -249,12 +272,10 @@ class Window(QWidget):
                             self.level[i][j] = 0
 
                     elif self.level[i][j] == 0:   # regulaer, wenn man was trifft und ungeblockt ist
-                        if self.loesung[i][j] == 0:
-                            print("falsch")
+                        if self.loesung[i][j] == 0:     # falsches Feld
                             self.level[i][j] = -1
                         elif self.loesung[i][j] == 1:
-                            print("richtig")
-                            self.level[i][j] = 1
+                            self.level[i][j] = 1        # richtiges Feld
 
                         """ Ueberpruefen ob Level geschafft ist """
                         gewonnen = True
@@ -266,8 +287,6 @@ class Window(QWidget):
                             print("Glueckwunsch, du hast es geschafft!")
 
                     self.update()
-
-
 
 
 
