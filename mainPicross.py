@@ -79,7 +79,7 @@ class Window(QWidget):
         self.wH = 800       # wH = windowHeight
         self.setGeometry(500, 50, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = beispiellevel
+        self.loesung = zufaelligesLevel(10,10)
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -405,6 +405,9 @@ class Window(QWidget):
             if self.level[reihe][i] == 0:
                 self.level[reihe][i] = 2
 
+        # Hinweise ausgrauen
+        self.hinweiseReihen[reihe][1] = False
+
         return True
 
 
@@ -419,6 +422,9 @@ class Window(QWidget):
         for i in range(self.anzahlReihen):
             if self.level[i][spalte] == 0:
                 self.level[i][spalte] = 2
+
+        # Hinweise ausgrauen
+        self.hinweiseReihen[spalte][1] = False
 
         return True
 
