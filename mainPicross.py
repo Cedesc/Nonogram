@@ -424,7 +424,7 @@ class Window(QWidget):
                 self.level[i][spalte] = 2
 
         # Hinweise ausgrauen
-        self.hinweiseReihen[spalte][1] = False
+        self.hinweiseSpalten[spalte][1] = False
 
         return True
 
