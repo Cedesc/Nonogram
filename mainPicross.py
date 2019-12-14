@@ -83,8 +83,8 @@ class Window(QWidget):
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
-        self.spalten = len(self.loesung)
-        self.reihen = len(self.loesung[0])
+        self.anzahlReihen = len(self.loesung)
+        self.anzahlSpalten = len(self.loesung[0])
 
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
@@ -116,9 +116,9 @@ class Window(QWidget):
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
 
         # vertikale Linien
-        breite = (self.wW - 2 * self.nachRechts) // self.reihen
-        for verschiebung in range(self.reihen + 1):
-            if verschiebung == 0 or verschiebung == self.reihen:
+        breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
+        for verschiebung in range(self.anzahlSpalten + 1):
+            if verschiebung == 0 or verschiebung == self.anzahlSpalten:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
@@ -139,9 +139,9 @@ class Window(QWidget):
                                  self.wH - self.nachUnten // 2)
 
         # horizontale Linien
-        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
-        for verschiebung in range(self.spalten + 1):
-            if verschiebung == 0 or verschiebung == self.spalten:
+        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
+        for verschiebung in range(self.anzahlReihen + 1):
+            if verschiebung == 0 or verschiebung == self.anzahlReihen:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung,
@@ -164,9 +164,9 @@ class Window(QWidget):
 
         """ Rechtecke einzeichnen """
         painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
-        for i in range(self.spalten):
+        for i in range(self.anzahlReihen):
 
-            for j in range(self.reihen):
+            for j in range(self.anzahlSpalten):
 
                 if self.level[i][j] == 1:
                     painter.fillRect(self.levelKoordinaten[i][j][0][0],
@@ -207,7 +207,7 @@ class Window(QWidget):
         # Reihen
         # Schleife durchlaeuft self.spalten, da es an der Anzahl von in einer Spalte liegenden Feldern abhaengt,
         # wie viele Reihen es gibt
-        for reihe in range(self.spalten):
+        for reihe in range(self.anzahlReihen):
             if self.hinweiseReihen[reihe][1]:       # pruefen ob visible
                 painter.drawText(0, self.nachUnten + hoehe * (reihe+0.5) - schriftgroesse // 2 ,
                                  self.nachRechts, hoehe, Qt.AlignHCenter , self.hinweiseReihen[reihe][0])
@@ -221,7 +221,7 @@ class Window(QWidget):
         # Spalten
         # Schleife durchlaeuft self.reihen, da es an der Anzahl von in einer Reihe liegenden Feldern abhaengt,
         # wie viele Spalten es gibt
-        for spalte in range(self.reihen):
+        for spalte in range(self.anzahlSpalten):
             if self.hinweiseSpalten[spalte][1]:     # pruefen ob visible
                 painter.drawText(self.nachRechts + breite * (spalte+0.5) - schriftgroesse // 2,
                                  self.nachUnten - schriftgroesse * 7,
@@ -255,8 +255,8 @@ class Window(QWidget):
         #print("               ", pos.x(), pos.y())     # zum ueberpruefen wo man klickt
 
         """ Eingaben moeglich machen """
-        for i in range(self.spalten):
-            for j in range(self.reihen):
+        for i in range(self.anzahlReihen):
+            for j in range(self.anzahlSpalten):
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
                 and (self.level[i][j] == 0 or self.level[i][j] == 2):
@@ -274,11 +274,13 @@ class Window(QWidget):
                             self.level[i][j] = -1
                         elif self.loesung[i][j] == 1:
                             self.level[i][j] = 1        # richtiges Feld
+                            self.reiheabgeschlossen(i)
+                            self.spalteabgeschlossen(j)
 
                         """ Ueberpruefen ob Level geschafft ist """
                         self.gewonnen = True
-                        for i in range(self.spalten):
-                            for j in range(self.reihen):
+                        for i in range(self.anzahlReihen):
+                            for j in range(self.anzahlSpalten):
                                 if self.loesung[i][j] == 1 and self.level[i][j] != 1:
                                     self.gewonnen = False
 
@@ -289,9 +291,9 @@ class Window(QWidget):
     def leeresLevelErstellen(self):
 
         result = []
-        for i in range(self.spalten):
+        for i in range(self.anzahlReihen):
             reihe = []
-            for j in range(self.reihen):
+            for j in range(self.anzahlSpalten):
                 reihe.append(0)
             result.append(reihe)
         return result
@@ -305,12 +307,12 @@ class Window(QWidget):
         result = []
 
         # reine Vorberechnung
-        breite = (self.wW - 2 * self.nachRechts) // self.reihen
-        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
+        breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
+        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
 
-        for i in range(self.spalten):
+        for i in range(self.anzahlReihen):
             reihe = []
-            for j in range(self.reihen):
+            for j in range(self.anzahlSpalten):
 
                 punktLinksOben = (self.nachRechts + breite * j, self.nachUnten + hoehe * i)
                 punktRechtsUnten = (self.nachRechts + breite * (j+1), self.nachUnten + hoehe * (i+1))
@@ -334,10 +336,10 @@ class Window(QWidget):
 
         # Hinweise fuer Spalten erstellen
         obenHinweise = []
-        for i in range(self.reihen):
+        for i in range(self.anzahlSpalten):
             zaehler = 0
             spalteHinweise = ""
-            for j in range(self.spalten):
+            for j in range(self.anzahlReihen):
                 if self.loesung[j][i] == 1:
                     zaehler += 1
                 else:
@@ -359,10 +361,10 @@ class Window(QWidget):
 
         # Hinweise fuer Reihen erstellen
         linksHinweise = []
-        for i in range(self.spalten):
+        for i in range(self.anzahlReihen):
             zaehler = 0
             reiheHinweise = ""
-            for j in range(self.reihen):
+            for j in range(self.anzahlSpalten):
                 if self.loesung[i][j] == 1:
                     zaehler += 1
                 else:
@@ -390,12 +392,37 @@ class Window(QWidget):
         self.level = copy.deepcopy(self.loesung)
 
 
-    def hinweiseNeuBerechnen(self):
-        pass
+    def reiheabgeschlossen(self, reihe):
+        # pruefen ob Reihe abgeschlossen ist, indem die schwarzen Felder der Loesung in der Reihe mit den
+        # schwarzen Feldern des Levels verglichen wird
+        for i in range(self.anzahlSpalten):
+            if self.loesung[reihe][i] == 1:
+                if self.level[reihe][i] != 1:
+                    return False
+
+        # unausgefuellter Rest der Reihe blocken
+        for i in range(self.anzahlSpalten):
+            if self.level[reihe][i] == 0:
+                self.level[reihe][i] = 2
+
+        return True
 
 
-    def reihespalteabgeschlossen(self):
-        pass
+    def spalteabgeschlossen(self, spalte):
+        # pruefen ob Spalte abgeschlossen ist mit analogem Verfahren zu reiheabgeschlossen
+        for i in range(self.anzahlReihen):
+            if self.loesung[i][spalte] == 1:
+                if self.level[i][spalte] != 1:
+                    return False
+
+        # unausgefuellter Rest der Spalte blocken
+        for i in range(self.anzahlReihen):
+            if self.level[i][spalte] == 0:
+                self.level[i][spalte] = 2
+
+        return True
+
+
 
 
 
