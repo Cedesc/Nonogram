@@ -4,13 +4,14 @@ from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterP
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import random
 import copy
+import picrossLevelBib
 
 
 """ Spiel-Settings """
 FENSTERBREITE = 1300
 FENSTERHOEHE = 1000
-ANZAHLREIHEN = 15
-ANZAHLSPALTEN = 15
+ANZAHLREIHEN = 10
+ANZAHLSPALTEN = 10
 
 
 """ 
@@ -116,20 +117,13 @@ class Window(QWidget):
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
         self.anzahlReihen = len(self.loesung)
         self.anzahlSpalten = len(self.loesung[0])
-
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
-
         self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
-
         self.gewonnen = False
-
-
-        #self.loesungAnzeigen()
-
+        self.creatorModeAn = False
 
         self.keyPressEvent = self.fn
-
         self.show()
 
 
@@ -267,8 +261,10 @@ class Window(QWidget):
 
 
     def fn(self, e):
-        if e.key() == Qt.Key_Left:
-            print("du hast links gedrueckt")
+        # H druecken um Steuerung anzuzeigen
+        if e.key() == Qt.Key_H:
+            print("Steuerung: \n  Escape :  Fenster schliessen\n  L :  Loesung anzeigen\n  R :  Level neustarten")
+            print("  C :  Creator-Mode anschalten\n  S :  Wenn der Creator-Mode an ist, wird das Level gespeichert")
 
         # R druecken um Level neuzustarten
         if e.key() == Qt.Key_R:
@@ -283,6 +279,19 @@ class Window(QWidget):
         if e.key() == Qt.Key_Escape:
             self.close()
 
+        # C druecken um in Creator-Mode zu wechseln
+        if e.key() == Qt.Key_C:
+            if self.creatorModeAn:
+                print("Bereits in Creator-Mode")
+            else:
+                self.creatorModeAn = True
+                self.creatorModeWechseln()
+                print("Creator-Mode aktiv")
+
+        # S druecken um momentanes Level zu speichern
+        if e.key() == Qt.Key_S and self.creatorModeAn:
+            self.creatorModelevelSpeichern()
+            print("Level abgespeichert")
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -359,11 +368,27 @@ class Window(QWidget):
 
     def levelReset(self):
         self.level = self.leeresLevelErstellen()
+
+        # alle Hinweise wieder schwarz machen
+        # schnellere Alternative zu hinweisSichtbarkeitpruefen
+        for i in range(len(self.hinweiseReihen)):
+            self.hinweiseReihen[i][1] = True
+        for i in range(len(self.hinweiseSpalten)):
+            self.hinweiseSpalten[i][1] = True
+
         self.gewonnen = False       # hebt Sperre auf, die Verhindert, dass man neu zeichnen kann
 
 
     def loesungAnzeigen(self):
         self.level = copy.deepcopy(self.loesung)
+
+        # alle Hinweise grau machen
+        # schnellere Alternative zu hinweisSichtbarkeitpruefen
+        for i in range(len(self.hinweiseReihen)):
+            self.hinweiseReihen[i][1] = False
+        for i in range(len(self.hinweiseSpalten)):
+            self.hinweiseSpalten[i][1] = False
+
         self.update()
 
 
@@ -464,6 +489,51 @@ class Window(QWidget):
         return True
 
 
+    def hinweisSichtbarkeitPruefen(self):
+        for i in range(self.anzahlSpalten):
+            self.spalteabgeschlossen(i)
+        for i in range(self.anzahlReihen):
+            self.reiheabgeschlossen(i)
+
+
+    def creatorModeWechseln(self):
+
+        # Loesung mit nur schwarzen Feldern erstellen, damit man keinen Fehler machen kann und nicht vorher abbricht
+        vollstaendigeLoesung = []
+        for i in range(self.anzahlReihen):
+            reihe = []
+            for j in range(self.anzahlSpalten):
+                reihe.append(1)
+            vollstaendigeLoesung.append(reihe)
+
+        self.loesung = vollstaendigeLoesung
+
+        # Level leeren
+        self.level = self.leeresLevelErstellen()
+
+        # Hinweise entfernen
+        for i in range(self.anzahlReihen):
+            self.hinweiseReihen[i][0] = ""
+        for i in range(self.anzahlSpalten):
+            self.hinweiseSpalten[i][0] = ""
+
+        self.update()
+
+
+    def creatorModelevelSpeichern(self):
+        txtDatei = open("levelSpeicher.txt", "w")
+
+        # alles ausser Einsen und Nullen aus der Datei entfernen
+        for i in range(self.anzahlReihen):
+            for j in range(self.anzahlSpalten):
+                if self.level[i][j] != 1:
+                    self.level[i][j] = 0
+        zuSpeicherndesLevel = "[\n"
+        for i in self.level:
+            zuSpeicherndesLevel += ("            " + str(i) + ",\n")
+        zuSpeicherndesLevel += "           ]"
+        txtDatei.write(zuSpeicherndesLevel)
+        txtDatei.close()
 
 
 
