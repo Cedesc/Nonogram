@@ -6,6 +6,12 @@ import random
 import copy
 
 
+""" Spiel-Settings """
+FENSTERBREITE = 1300
+FENSTERHOEHE = 1000
+ANZAHLREIHEN = 15
+ANZAHLSPALTEN = 15
+
 
 """ 
 Erklaerung: 
@@ -65,8 +71,33 @@ def zufaelligesLevel(weite, hoehe):
         resultlevel.append(zeile)
     return resultlevel
 
-#beispiel = zufaelligesLevel(10,10)
-#levelAnzeigen(beispiel)
+
+def zufaelligesLevelMitSchwierigkeit(weite, hoehe, schwierigkeit):  # leichter: negative Zahl, schwerer: positive Zahl
+    # abs(schwierigkeit) viele zufaellige Level erstellen. Fuer leichtere Level, die mit den meisten schwarzen Feldern,
+    # fuer schwierigere, die mit den wenigsten schwarzen Feldern zurueckgeben
+    zufaelligeLevel = []
+    for i in range(abs(schwierigkeit)):
+        templevel = zufaelligesLevel(weite, hoehe)
+        zaehler = 0
+        for j in templevel:
+            for k in j:
+                if k == 1:
+                    zaehler += 1
+        zufaelligeLevel.append((templevel, zaehler))
+    if schwierigkeit < 0:
+        maxim = zufaelligeLevel[0]
+        for i in zufaelligeLevel:
+
+            if i[1] > maxim[1]:
+                maxim = i
+
+        return maxim[0]
+    if schwierigkeit > 0:
+        mindest = zufaelligeLevel[0]
+        for i in zufaelligeLevel:
+            if i[1] < mindest[1]:
+                mindest = i
+        return mindest[0]
 
 
 
@@ -75,11 +106,11 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.wW = 800       # wW = windowWidth
-        self.wH = 800       # wH = windowHeight
-        self.setGeometry(500, 50, self.wW, self.wH)
+        self.wW = FENSTERBREITE       # wW = windowWidth
+        self.wH = FENSTERHOEHE        # wH = windowHeight
+        self.setGeometry(500, 30, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = zufaelligesLevel(10,10)
+        self.loesung = zufaelligesLevelMitSchwierigkeit(ANZAHLSPALTEN, ANZAHLREIHEN, -1000)
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -224,13 +255,13 @@ class Window(QWidget):
         for spalte in range(self.anzahlSpalten):
             if self.hinweiseSpalten[spalte][1]:     # pruefen ob visible
                 painter.drawText(self.nachRechts + breite * (spalte+0.5) - schriftgroesse // 2,
-                                 self.nachUnten - schriftgroesse * 7,
-                                 schriftgroesse * 3, schriftgroesse * 7, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
+                                 self.nachUnten - schriftgroesse * 20,
+                                 schriftgroesse * 3, schriftgroesse * 20, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
             else:
                 painter.setPen(QColor(180,180,180))
                 painter.drawText(self.nachRechts + breite * (spalte + 0.5) - schriftgroesse // 2,
-                                 self.nachUnten - schriftgroesse * 7,
-                                 schriftgroesse * 3, schriftgroesse * 7, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
+                                 self.nachUnten - schriftgroesse * 20,
+                                 schriftgroesse * 3, schriftgroesse * 20, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
                 painter.setPen(QColor(0,0,0))
 
 
@@ -243,6 +274,10 @@ class Window(QWidget):
         if e.key() == Qt.Key_R:
             self.levelReset()
             self.update()
+
+        # L druecken um Loesung anzuzeigen
+        if e.key() == Qt.Key_L:
+            self.loesungAnzeigen()
 
         # esc druecken um Level zu schliessen
         if e.key() == Qt.Key_Escape:
