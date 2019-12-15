@@ -536,6 +536,10 @@ class Window(QWidget):
         txtDatei.close()
 
 
+    def neuesLevelErstellen(self):
+        pass
+
+
 
 
 
