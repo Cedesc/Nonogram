@@ -2,33 +2,17 @@ import sys
 from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
-import random
-import copy
-import picrossLevelBib
 
-
-""" Spiel-Settings """
-FENSTERBREITE = 1300
-FENSTERHOEHE = 1000
-ANZAHLREIHEN = 10
-ANZAHLSPALTEN = 10
 
 
 """ 
 Erklaerung: 
     - 3 geschachtelte Listen mit Tiefe 2, 1. mit der Loesung, 2. mit dem momentanen Stand, 3. mit Koordinaten
-    - linke Maustaste um Feld zu bestaetigen, rechte Maustaste um Feld zu blocken
+    - in "level" steht "0" fuer "leer", "1" fuer "richtig", "-1" fuer "falsch", "2" fuer "blockiert"
 """
 
-""" Beispiel-Level """
-beispiellevel = [[0,1,1,1,0],
-                 [0,0,1,0,0],
-                 [0,1,1,0,1],
-                 [0,0,0,0,0],
-                 [1,0,1,1,1],
-                 [1,0,1,0,0]]
-
-beispiellevel2 = [[0,1,1,1,1,1,0],
+""" Beispiel-Level ist 6x5 """
+beispiellevel = [ [0,1,1,1,1,1,0],
                   [0,1,0,1,0,1,0],
                   [0,1,0,1,0,1,0],
                   [0,1,1,1,1,1,0],
@@ -42,88 +26,35 @@ beispiellevel2 = [[0,1,1,1,1,1,0],
                   [1,1,0,1,0,1,1],
                   [0,1,1,0,1,1,0]]
 
-beispiellevel3 = [
-                 [0,1,1,1,1,1,0,
-                  0,1,0,1,0,1,0],
-                  [0,1,0,1,0,1,0,
-                  0,1,1,1,1,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [1,0,0,0,0,0,1,
-                  1,1,0,1,0,1,1]]
-
-
 def levelAnzeigen(level):
     for zeile in level:
         print(zeile)
     return
 
-
-def zufaelligesLevel(weite, hoehe):
-    resultlevel = []
-    for y in range(hoehe):
-        zeile = []
-        for x in range(weite):
-            zeile.append(random.randint(0,1))
-        resultlevel.append(zeile)
-    return resultlevel
-
-
-def zufaelligesLevelMitSchwierigkeit(weite, hoehe, schwierigkeit):  # leichter: negative Zahl, schwerer: positive Zahl
-    # abs(schwierigkeit) viele zufaellige Level erstellen. Fuer leichtere Level, die mit den meisten schwarzen Feldern,
-    # fuer schwierigere, die mit den wenigsten schwarzen Feldern zurueckgeben
-    zufaelligeLevel = []
-    for i in range(abs(schwierigkeit)):
-        templevel = zufaelligesLevel(weite, hoehe)
-        zaehler = 0
-        for j in templevel:
-            for k in j:
-                if k == 1:
-                    zaehler += 1
-        zufaelligeLevel.append((templevel, zaehler))
-    if schwierigkeit < 0:
-        maxim = zufaelligeLevel[0]
-        for i in zufaelligeLevel:
-
-            if i[1] > maxim[1]:
-                maxim = i
-
-        return maxim[0]
-    if schwierigkeit > 0:
-        mindest = zufaelligeLevel[0]
-        for i in zufaelligeLevel:
-            if i[1] < mindest[1]:
-                mindest = i
-        return mindest[0]
-
-
+# levelAnzeigen(beispiellevel)
 
 class Window(QWidget):
 
     def __init__(self):
         super().__init__()
 
-        self.wW = FENSTERBREITE       # wW = windowWidth
-        self.wH = FENSTERHOEHE        # wH = windowHeight
-        self.setGeometry(500, 30, self.wW, self.wH)
+        self.wW = 800       # wW = windowWidth
+        self.wH = 800       # wH = windowHeight
+        self.setGeometry(500, 50, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = zufaelligesLevelMitSchwierigkeit(ANZAHLSPALTEN, ANZAHLREIHEN, -1000)
+        self.loesung = beispiellevel
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
-        self.anzahlReihen = len(self.loesung)
-        self.anzahlSpalten = len(self.loesung[0])
+        self.spalten = len(self.loesung)
+        self.reihen = len(self.loesung[0])
+
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
-        self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
-        self.gewonnen = False
-        self.creatorModeAn = False
+
 
         self.keyPressEvent = self.fn
+
         self.show()
 
 
@@ -132,18 +63,14 @@ class Window(QWidget):
 
         ''' Hintergrund '''
         painter.fillRect(0, 0, self.wW, self.wH, QColor(205, 205, 205))
-        if self.gewonnen:
-            painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
-            self.gewinnAnimation()
-
 
         ''' Netz aufbauen '''
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
 
         # vertikale Linien
-        breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
-        for verschiebung in range(self.anzahlSpalten + 1):
-            if verschiebung == 0 or verschiebung == self.anzahlSpalten:
+        breite = (self.wW - 2 * self.nachRechts) // self.reihen
+        for verschiebung in range(self.reihen + 1):
+            if verschiebung == 0 or verschiebung == self.reihen:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
@@ -164,9 +91,9 @@ class Window(QWidget):
                                  self.wH - self.nachUnten // 2)
 
         # horizontale Linien
-        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
-        for verschiebung in range(self.anzahlReihen + 1):
-            if verschiebung == 0 or verschiebung == self.anzahlReihen:
+        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
+        for verschiebung in range(self.spalten + 1):
+            if verschiebung == 0 or verschiebung == self.spalten:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung,
@@ -189,9 +116,9 @@ class Window(QWidget):
 
         """ Rechtecke einzeichnen """
         painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
-        for i in range(self.anzahlReihen):
+        for i in range(self.spalten):
 
-            for j in range(self.anzahlSpalten):
+            for j in range(self.reihen):
 
                 if self.level[i][j] == 1:
                     painter.fillRect(self.levelKoordinaten[i][j][0][0],
@@ -201,7 +128,6 @@ class Window(QWidget):
                                      QColor(0,0,0))
 
                 if self.level[i][j] == -1:
-                    painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
                     painter.drawLine(self.levelKoordinaten[i][j][0][0],
                                      self.levelKoordinaten[i][j][0][1],
                                      self.levelKoordinaten[i][j][1][0],
@@ -210,138 +136,53 @@ class Window(QWidget):
                                      self.levelKoordinaten[i][j][1][1],
                                      self.levelKoordinaten[i][j][1][0],
                                      self.levelKoordinaten[i][j][0][1])
-
-                if self.level[i][j] == 2:
-                    painter.setPen(QPen(QColor(100, 100, 100), 2, Qt.SolidLine))
-                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
-                                     self.levelKoordinaten[i][j][0][1],
-                                     self.levelKoordinaten[i][j][1][0],
-                                     self.levelKoordinaten[i][j][1][1])
-                    painter.drawLine(self.levelKoordinaten[i][j][0][0],
-                                     self.levelKoordinaten[i][j][1][1],
-                                     self.levelKoordinaten[i][j][1][0],
-                                     self.levelKoordinaten[i][j][0][1])
-
-
-        """ Hinweise einbringen """
-        # Idee: an den gezeichneten Linien orientieren
-        painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
-        schriftgroesse = hoehe // 6
-        painter.setFont(QFont("Arial", schriftgroesse))
-
-        # Reihen
-        # Schleife durchlaeuft self.spalten, da es an der Anzahl von in einer Spalte liegenden Feldern abhaengt,
-        # wie viele Reihen es gibt
-        for reihe in range(self.anzahlReihen):
-            if self.hinweiseReihen[reihe][1]:       # pruefen ob visible
-                painter.drawText(0, self.nachUnten + hoehe * (reihe+0.5) - schriftgroesse // 2 ,
-                                 self.nachRechts, hoehe, Qt.AlignHCenter , self.hinweiseReihen[reihe][0])
-            else:
-                painter.setPen(QColor(180,180,180))
-                painter.drawText(0, self.nachUnten + hoehe * (reihe + 0.5) - schriftgroesse // 2,
-                                 self.nachRechts, hoehe, Qt.AlignHCenter, self.hinweiseReihen[reihe][0])
-                painter.setPen(QColor(0, 0, 0))
-
-
-        # Spalten
-        # Schleife durchlaeuft self.reihen, da es an der Anzahl von in einer Reihe liegenden Feldern abhaengt,
-        # wie viele Spalten es gibt
-        for spalte in range(self.anzahlSpalten):
-            if self.hinweiseSpalten[spalte][1]:     # pruefen ob visible
-                painter.drawText(self.nachRechts + breite * (spalte+0.5) - schriftgroesse // 2,
-                                 self.nachUnten - schriftgroesse * 20,
-                                 schriftgroesse * 3, schriftgroesse * 20, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
-            else:
-                painter.setPen(QColor(180,180,180))
-                painter.drawText(self.nachRechts + breite * (spalte + 0.5) - schriftgroesse // 2,
-                                 self.nachUnten - schriftgroesse * 20,
-                                 schriftgroesse * 3, schriftgroesse * 20, Qt.AlignBottom, self.hinweiseSpalten[spalte][0])
-                painter.setPen(QColor(0,0,0))
-
 
 
     def fn(self, e):
-        # H druecken um Steuerung anzuzeigen
-        if e.key() == Qt.Key_H:
-            print("Steuerung: \n  Escape :  Fenster schliessen\n  L :  Loesung anzeigen\n  R :  Level neustarten")
-            print("  C :  Creator-Mode anschalten\n  S :  Wenn der Creator-Mode an ist, wird das Level gespeichert")
+        if e.key() == Qt.Key_Left:
+            print("du hast links gedrueckt")
 
-        # R druecken um Level neuzustarten
-        if e.key() == Qt.Key_R:
-            self.levelReset()
-            self.update()
+        if e.key() == Qt.Key_Q:
+            print("gedrueckt")
 
-        # L druecken um Loesung anzuzeigen
-        if e.key() == Qt.Key_L:
-            self.loesungAnzeigen()
-
-        # esc druecken um Level zu schliessen
         if e.key() == Qt.Key_Escape:
             self.close()
 
-        # C druecken um in Creator-Mode zu wechseln
-        if e.key() == Qt.Key_C:
-            if self.creatorModeAn:
-                print("Bereits in Creator-Mode")
-            else:
-                self.creatorModeAn = True
-                self.creatorModeWechseln()
-                print("Creator-Mode aktiv")
 
-        # S druecken um momentanes Level zu speichern
-        if e.key() == Qt.Key_S and self.creatorModeAn:
-            self.creatorModelevelSpeichern()
-            print("Level abgespeichert")
+        """ Ideen: neustarten, feld blockieren """
 
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
-        #print("               ", pos.x(), pos.y())     # zum ueberpruefen wo man klickt
+        print("               ", pos.x(), pos.y())
 
-        """ Eingaben moeglich machen """
-        for i in range(self.anzahlReihen):
-            for j in range(self.anzahlSpalten):
+        for i in range(self.spalten):
+
+            for j in range(self.reihen):
+
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
-                and (self.level[i][j] == 0 or self.level[i][j] == 2):
-
-                    # Feld blocken
-                    if QMouseEvent.button() == Qt.RightButton:
-                        if self.level[i][j] == 0:
-                            self.level[i][j] = 2
-                        elif self.level[i][j] == 2:
-                            self.level[i][j] = 0
-
-                    # regulaer, wenn man was trifft und ungeblockt ist
-                    if QMouseEvent.button() == Qt.LeftButton and self.level[i][j] == 0:
-                        if self.loesung[i][j] == 0:     # falsches Feld
-                            self.level[i][j] = -1
-                        elif self.loesung[i][j] == 1:
-                            self.level[i][j] = 1        # richtiges Feld
-                            self.reiheabgeschlossen(i)
-                            self.spalteabgeschlossen(j)
-
-                        """ Ueberpruefen ob Level geschafft ist """
-                        self.gewonnen = True
-                        for i in range(self.anzahlReihen):
-                            for j in range(self.anzahlSpalten):
-                                if self.loesung[i][j] == 1 and self.level[i][j] != 1:
-                                    self.gewonnen = False
-
+                and self.level[i][j] == 0:
+                    if self.loesung[i][j] == 0:
+                        print("falsch")
+                        self.level[i][j] = -1
+                    elif self.loesung[i][j] == 1:
+                        print("richtig")
+                        self.level[i][j] = 1
                     self.update()
+
 
 
 
     def leeresLevelErstellen(self):
 
         result = []
-        for i in range(self.anzahlReihen):
+        for i in range(self.spalten):
             reihe = []
-            for j in range(self.anzahlSpalten):
+            for j in range(self.reihen):
                 reihe.append(0)
             result.append(reihe)
         return result
-
 
     def koordinatenBestimmen(self):
 
@@ -351,12 +192,12 @@ class Window(QWidget):
         result = []
 
         # reine Vorberechnung
-        breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
-        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
+        breite = (self.wW - 2 * self.nachRechts) // self.reihen
+        hoehe = (self.wH - 2 * self.nachUnten) // self.spalten
 
-        for i in range(self.anzahlReihen):
+        for i in range(self.spalten):
             reihe = []
-            for j in range(self.anzahlSpalten):
+            for j in range(self.reihen):
 
                 punktLinksOben = (self.nachRechts + breite * j, self.nachUnten + hoehe * i)
                 punktRechtsUnten = (self.nachRechts + breite * (j+1), self.nachUnten + hoehe * (i+1))
@@ -367,178 +208,17 @@ class Window(QWidget):
 
 
     def levelReset(self):
-        self.level = self.leeresLevelErstellen()
-
-        # alle Hinweise wieder schwarz machen
-        # schnellere Alternative zu hinweisSichtbarkeitpruefen
-        for i in range(len(self.hinweiseReihen)):
-            self.hinweiseReihen[i][1] = True
-        for i in range(len(self.hinweiseSpalten)):
-            self.hinweiseSpalten[i][1] = True
-
-        self.gewonnen = False       # hebt Sperre auf, die Verhindert, dass man neu zeichnen kann
-
-
-    def loesungAnzeigen(self):
-        self.level = copy.deepcopy(self.loesung)
-
-        # alle Hinweise grau machen
-        # schnellere Alternative zu hinweisSichtbarkeitpruefen
-        for i in range(len(self.hinweiseReihen)):
-            self.hinweiseReihen[i][1] = False
-        for i in range(len(self.hinweiseSpalten)):
-            self.hinweiseSpalten[i][1] = False
-
-        self.update()
-
-
-    def hinweiseErstellen(self):
-
-        # Hinweise fuer Spalten erstellen
-        obenHinweise = []
-        for i in range(self.anzahlSpalten):
-            zaehler = 0
-            spalteHinweise = ""
-            for j in range(self.anzahlReihen):
-                if self.loesung[j][i] == 1:
-                    zaehler += 1
-                else:
-                    if zaehler != 0:
-                        if spalteHinweise:
-                            spalteHinweise += "\n" + str(zaehler)
-                        else:
-                            spalteHinweise = str(zaehler)
-
-                    zaehler = 0
-            if not spalteHinweise and zaehler == 0:  # wenn kein Feld schwarz ist
-                spalteHinweise = "0"
-            if zaehler != 0:  # wenn das letzte Feld schwarz ist
-                if spalteHinweise:
-                    spalteHinweise += "\n" + str(zaehler)
-                else:
-                    spalteHinweise = str(zaehler)
-            obenHinweise.append([spalteHinweise, True])
-
-        # Hinweise fuer Reihen erstellen
-        linksHinweise = []
-        for i in range(self.anzahlReihen):
-            zaehler = 0
-            reiheHinweise = ""
-            for j in range(self.anzahlSpalten):
-                if self.loesung[i][j] == 1:
-                    zaehler += 1
-                else:
-                    if zaehler != 0:
-                        if reiheHinweise:
-                            reiheHinweise += "  " + str(zaehler)
-                        else:
-                            reiheHinweise = str(zaehler)
-
-                    zaehler = 0
-            if not reiheHinweise and zaehler == 0:   # wenn kein Feld schwarz ist
-                reiheHinweise = "0"
-            if zaehler != 0:       # wenn das letzte Feld schwarz ist
-                if reiheHinweise:
-                    reiheHinweise += "  " + str(zaehler)
-                else:
-                    reiheHinweise = str(zaehler)
-            linksHinweise.append([reiheHinweise, True])
-
-        return obenHinweise, linksHinweise
-
-
-    def gewinnAnimation(self):
-        print("Glueckwunsch, du hast es geschafft!")
-        self.level = copy.deepcopy(self.loesung)
-
-
-    def reiheabgeschlossen(self, reihe):
-        # pruefen ob Reihe abgeschlossen ist, indem die schwarzen Felder der Loesung in der Reihe mit den
-        # schwarzen Feldern des Levels verglichen wird
-        for i in range(self.anzahlSpalten):
-            if self.loesung[reihe][i] == 1:
-                if self.level[reihe][i] != 1:
-                    return False
-
-        # unausgefuellter Rest der Reihe blocken
-        for i in range(self.anzahlSpalten):
-            if self.level[reihe][i] == 0:
-                self.level[reihe][i] = 2
-
-        # Hinweise ausgrauen
-        self.hinweiseReihen[reihe][1] = False
-
-        return True
-
-
-    def spalteabgeschlossen(self, spalte):
-        # pruefen ob Spalte abgeschlossen ist mit analogem Verfahren zu reiheabgeschlossen
-        for i in range(self.anzahlReihen):
-            if self.loesung[i][spalte] == 1:
-                if self.level[i][spalte] != 1:
-                    return False
-
-        # unausgefuellter Rest der Spalte blocken
-        for i in range(self.anzahlReihen):
-            if self.level[i][spalte] == 0:
-                self.level[i][spalte] = 2
-
-        # Hinweise ausgrauen
-        self.hinweiseSpalten[spalte][1] = False
-
-        return True
-
-
-    def hinweisSichtbarkeitPruefen(self):
-        for i in range(self.anzahlSpalten):
-            self.spalteabgeschlossen(i)
-        for i in range(self.anzahlReihen):
-            self.reiheabgeschlossen(i)
-
-
-    def creatorModeWechseln(self):
-
-        # Loesung mit nur schwarzen Feldern erstellen, damit man keinen Fehler machen kann und nicht vorher abbricht
-        vollstaendigeLoesung = []
-        for i in range(self.anzahlReihen):
-            reihe = []
-            for j in range(self.anzahlSpalten):
-                reihe.append(1)
-            vollstaendigeLoesung.append(reihe)
-
-        self.loesung = vollstaendigeLoesung
-
-        # Level leeren
-        self.level = self.leeresLevelErstellen()
-
-        # Hinweise entfernen
-        for i in range(self.anzahlReihen):
-            self.hinweiseReihen[i][0] = ""
-        for i in range(self.anzahlSpalten):
-            self.hinweiseSpalten[i][0] = ""
-
-        self.update()
-
-
-    def creatorModelevelSpeichern(self):
-        txtDatei = open("levelSpeicher.txt", "w")
-
-        # alles ausser Einsen und Nullen aus der Datei entfernen
-        for i in range(self.anzahlReihen):
-            for j in range(self.anzahlSpalten):
-                if self.level[i][j] != 1:
-                    self.level[i][j] = 0
-        zuSpeicherndesLevel = "[\n"
-        for i in self.level:
-            zuSpeicherndesLevel += ("            " + str(i) + ",\n")
-        zuSpeicherndesLevel += "           ]"
-        txtDatei.write(zuSpeicherndesLevel)
-        txtDatei.close()
-
-
-    def neuesLevelErstellen(self):
         pass
 
+    def eckkoordinatenBerechnen(self):
+        pass
+
+    def hinweiseBerechnen(self):
+        pass
+
+    def loesungAnzeigen(self):
+        self.level = self.loesung
+        self.update()
 
 
 
