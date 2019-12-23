@@ -12,6 +12,7 @@ FENSTERBREITE = 1300
 FENSTERHOEHE = 1000
 ANZAHLREIHEN = 10
 ANZAHLSPALTEN = 10
+SCHWIERIGKEIT = -1000
 
 
 """ 
@@ -111,7 +112,7 @@ class Window(QWidget):
         self.wH = FENSTERHOEHE        # wH = windowHeight
         self.setGeometry(500, 30, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = zufaelligesLevelMitSchwierigkeit(ANZAHLSPALTEN, ANZAHLREIHEN, -1000)
+        self.loesung = zufaelligesLevelMitSchwierigkeit(ANZAHLSPALTEN, ANZAHLREIHEN, SCHWIERIGKEIT)
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -122,6 +123,11 @@ class Window(QWidget):
         self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
         self.gewonnen = False
         self.creatorModeAn = False
+        self.hinweiseInZahlenReihenSpalten = self.hinweiseInZahlenAendern()
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update)
+        self.hinweiseInZahlenAendern()
 
         self.keyPressEvent = self.fn
         self.show()
@@ -292,6 +298,10 @@ class Window(QWidget):
         if e.key() == Qt.Key_S and self.creatorModeAn:
             self.creatorModelevelSpeichern()
             print("Level abgespeichert")
+
+        # K druecken um KI das Level loesen zu lassen
+        if e.key() == Qt.Key_K:
+            self.kiSchritt()
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -539,6 +549,63 @@ class Window(QWidget):
     def neuesLevelErstellen(self):
         pass
 
+
+    def hinweiseInZahlenAendern(self):
+        neueHinweiseReihen = []
+        for liste in self.hinweiseReihen:
+            proReihe = []
+            zahl = ""
+            for zeichen in liste[0]:
+                if zeichen == " " and zahl != "":
+                    proReihe.append(int(zahl))
+                    zahl = ""
+                else:
+                    zahl += zeichen
+            proReihe.append(int(zahl))
+            neueHinweiseReihen.append(proReihe)
+
+        neueHinweiseSpalten = []
+        for liste in self.hinweiseSpalten:
+            proSpalte = []
+            zahl = ""
+            for zeichen in liste[0]:
+                if zeichen == "\n" and zahl != "":
+                    proSpalte.append(int(zahl))
+                    zahl = ""
+                else:
+                    zahl += zeichen
+            proSpalte.append(int(zahl))
+            neueHinweiseSpalten.append(proSpalte)
+
+        return neueHinweiseReihen, neueHinweiseSpalten
+
+
+    def kiAktivieren(self):
+        self.timer.start(1000)
+
+
+    def kiSchritt(self):
+        # eindeutige Reihen vervollstaendigen
+        for hinweisReihe in range(len(self.hinweiseInZahlenReihenSpalten[0])):
+            summeProReihe = -1
+            for hinweis in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
+                summeProReihe += 1 + hinweis
+            # wenn in einer Reihe kein schwarzes Feld vorhanden ist
+            if summeProReihe == 0:
+                for j in range(self.anzahlSpalten):
+                    self.level[hinweisReihe][j] = 2
+
+            # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
+            if summeProReihe == self.anzahlSpalten:
+                zaehler = 0
+                for anzahlSchwarzeFelder in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
+                    for schwarzesFeld in range(anzahlSchwarzeFelder):
+                        self.level[hinweisReihe][zaehler] = 1
+                        zaehler += 1
+                    if zaehler < self.anzahlSpalten:
+                        self.level[hinweisReihe][zaehler] = 2
+                        zaehler += 1
+        self.update()
 
 
 
