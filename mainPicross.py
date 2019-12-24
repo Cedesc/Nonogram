@@ -554,27 +554,27 @@ class Window(QWidget):
         neueHinweiseReihen = []
         for liste in self.hinweiseReihen:
             proReihe = []
-            zahl = ""
+            zahlR = ""
             for zeichen in liste[0]:
-                if zeichen == " " and zahl != "":
-                    proReihe.append(int(zahl))
-                    zahl = ""
+                if zeichen == " " and zahlR != "":
+                    proReihe.append(int(zahlR))
+                    zahlR = ""
                 else:
-                    zahl += zeichen
-            proReihe.append(int(zahl))
+                    zahlR += zeichen
+            proReihe.append(int(zahlR))
             neueHinweiseReihen.append(proReihe)
 
         neueHinweiseSpalten = []
         for liste in self.hinweiseSpalten:
             proSpalte = []
-            zahl = ""
+            zahlS = ""
             for zeichen in liste[0]:
-                if zeichen == "\n" and zahl != "":
-                    proSpalte.append(int(zahl))
-                    zahl = ""
+                if zeichen == "\n" and zahlS != "":
+                    proSpalte.append(int(zahlS))
+                    zahlS = ""
                 else:
-                    zahl += zeichen
-            proSpalte.append(int(zahl))
+                    zahlS += zeichen
+            proSpalte.append(int(zahlS))
             neueHinweiseSpalten.append(proSpalte)
 
         return neueHinweiseReihen, neueHinweiseSpalten
@@ -588,23 +588,53 @@ class Window(QWidget):
         # eindeutige Reihen vervollstaendigen
         for hinweisReihe in range(len(self.hinweiseInZahlenReihenSpalten[0])):
             summeProReihe = -1
-            for hinweis in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
-                summeProReihe += 1 + hinweis
+            for hinweisR in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
+                summeProReihe += 1 + hinweisR
+
             # wenn in einer Reihe kein schwarzes Feld vorhanden ist
             if summeProReihe == 0:
+                self.hinweiseReihen[hinweisReihe][1] = False
                 for j in range(self.anzahlSpalten):
                     self.level[hinweisReihe][j] = 2
 
             # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
             if summeProReihe == self.anzahlSpalten:
-                zaehler = 0
-                for anzahlSchwarzeFelder in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
-                    for schwarzesFeld in range(anzahlSchwarzeFelder):
-                        self.level[hinweisReihe][zaehler] = 1
-                        zaehler += 1
-                    if zaehler < self.anzahlSpalten:
-                        self.level[hinweisReihe][zaehler] = 2
-                        zaehler += 1
+                self.hinweiseReihen[hinweisReihe][1] = False
+                zaehlerR = 0
+                for anzahlSchwarzeFelderR in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
+                    for schwarzesFeld in range(anzahlSchwarzeFelderR):
+                        self.level[hinweisReihe][zaehlerR] = 1
+                        zaehlerR += 1
+                    if zaehlerR < self.anzahlSpalten:
+                        self.level[hinweisReihe][zaehlerR] = 2
+                        zaehlerR += 1
+
+
+        # eindeutige Spalten vervollstaendigen
+        for hinweisSpalte in range(len(self.hinweiseInZahlenReihenSpalten[1])):
+            summeProSpalte = -1
+            for hinweisS in self.hinweiseInZahlenReihenSpalten[1][hinweisSpalte]:
+                summeProSpalte += 1 + hinweisS
+
+            # wenn in einer Reihe kein schwarzes Feld vorhanden ist
+            if summeProSpalte == 0:
+                self.hinweiseSpalten[hinweisSpalte][1] = False
+                for i in range(self.anzahlReihen):
+                    self.level[i][hinweisSpalte] = 2
+
+            # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
+            if summeProSpalte == self.anzahlReihen:
+                self.hinweiseSpalten[hinweisSpalte][1] = False
+                zaehlerS = 0
+                for anzahlSchwarzeFelderS in self.hinweiseInZahlenReihenSpalten[1][hinweisSpalte]:
+                    for schwarzesFeld in range(anzahlSchwarzeFelderS):
+                        self.level[zaehlerS][hinweisSpalte] = 1
+                        zaehlerS += 1
+                    if zaehlerS < self.anzahlReihen:
+                        self.level[zaehlerS][hinweisSpalte] = 2
+                        zaehlerS += 1
+
+
         self.update()
 
 
