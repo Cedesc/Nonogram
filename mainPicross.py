@@ -2,17 +2,8 @@ import sys
 from PyQt5.QtWidgets import QWidget, QApplication
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
-import random
 import copy
-import picrossLevelBib
-
-
-""" Spiel-Settings """
-FENSTERBREITE = 1300
-FENSTERHOEHE = 1000
-ANZAHLREIHEN = 10
-ANZAHLSPALTEN = 10
-SCHWIERIGKEIT = -1000
+import picrossSettings as ps
 
 
 """ 
@@ -21,85 +12,6 @@ Erklaerung:
     - linke Maustaste um Feld zu bestaetigen, rechte Maustaste um Feld zu blocken
 """
 
-""" Beispiel-Level """
-beispiellevel = [[0,1,1,1,0],
-                 [0,0,1,0,0],
-                 [0,1,1,0,1],
-                 [0,0,0,0,0],
-                 [1,0,1,1,1],
-                 [1,0,1,0,0]]
-
-beispiellevel2 = [[0,1,1,1,1,1,0],
-                  [0,1,0,1,0,1,0],
-                  [0,1,0,1,0,1,0],
-                  [0,1,1,1,1,1,0],
-                  [0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0],
-                  [1,0,0,0,0,0,1],
-                  [1,1,0,1,0,1,1],
-                  [0,1,1,0,1,1,0]]
-
-beispiellevel3 = [
-                 [0,1,1,1,1,1,0,
-                  0,1,0,1,0,1,0],
-                  [0,1,0,1,0,1,0,
-                  0,1,1,1,1,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [0,1,0,0,0,1,0,
-                  0,1,0,0,0,1,0],
-                  [1,0,0,0,0,0,1,
-                  1,1,0,1,0,1,1]]
-
-
-def levelAnzeigen(level):
-    for zeile in level:
-        print(zeile)
-    return
-
-
-def zufaelligesLevel(weite, hoehe):
-    resultlevel = []
-    for y in range(hoehe):
-        zeile = []
-        for x in range(weite):
-            zeile.append(random.randint(0,1))
-        resultlevel.append(zeile)
-    return resultlevel
-
-
-def zufaelligesLevelMitSchwierigkeit(weite, hoehe, schwierigkeit):  # leichter: negative Zahl, schwerer: positive Zahl
-    # abs(schwierigkeit) viele zufaellige Level erstellen. Fuer leichtere Level, die mit den meisten schwarzen Feldern,
-    # fuer schwierigere, die mit den wenigsten schwarzen Feldern zurueckgeben
-    zufaelligeLevel = []
-    for i in range(abs(schwierigkeit)):
-        templevel = zufaelligesLevel(weite, hoehe)
-        zaehler = 0
-        for j in templevel:
-            for k in j:
-                if k == 1:
-                    zaehler += 1
-        zufaelligeLevel.append((templevel, zaehler))
-    if schwierigkeit < 0:
-        maxim = zufaelligeLevel[0]
-        for i in zufaelligeLevel:
-
-            if i[1] > maxim[1]:
-                maxim = i
-
-        return maxim[0]
-    if schwierigkeit > 0:
-        mindest = zufaelligeLevel[0]
-        for i in zufaelligeLevel:
-            if i[1] < mindest[1]:
-                mindest = i
-        return mindest[0]
 
 
 
@@ -108,11 +20,11 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.wW = FENSTERBREITE       # wW = windowWidth
-        self.wH = FENSTERHOEHE        # wH = windowHeight
+        self.wW = ps.FENSTERBREITE       # wW = windowWidth
+        self.wH = ps.FENSTERHOEHE        # wH = windowHeight
         self.setGeometry(500, 30, self.wW, self.wH)
         self.setWindowTitle("Picross")
-        self.loesung = zufaelligesLevelMitSchwierigkeit(ANZAHLSPALTEN, ANZAHLREIHEN, SCHWIERIGKEIT)
+        self.loesung = ps.LEVEL
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
@@ -124,6 +36,11 @@ class Window(QWidget):
         self.gewonnen = False
         self.creatorModeAn = False
         self.hinweiseInZahlenReihenSpalten = self.hinweiseInZahlenAendern()
+
+        for i in range(self.anzahlReihen):
+            self.reiheabgeschlossen(i)
+        for j in range(self.anzahlSpalten):
+            self.spalteabgeschlossen(j)
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -302,6 +219,7 @@ class Window(QWidget):
         # K druecken um KI das Level loesen zu lassen
         if e.key() == Qt.Key_K:
             self.kiSchritt()
+            self.update()
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -592,14 +510,14 @@ class Window(QWidget):
                 summeProReihe += 1 + hinweisR
 
             # wenn in einer Reihe kein schwarzes Feld vorhanden ist
-            if summeProReihe == 0:
+            if summeProReihe == 0 and self.hinweiseReihen[hinweisReihe][1]:
                 self.hinweiseReihen[hinweisReihe][1] = False
                 for j in range(self.anzahlSpalten):
                     self.level[hinweisReihe][j] = 2
+                return
 
             # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
-            if summeProReihe == self.anzahlSpalten:
-                self.hinweiseReihen[hinweisReihe][1] = False
+            if summeProReihe == self.anzahlSpalten and self.hinweiseReihen[hinweisReihe][1]:
                 zaehlerR = 0
                 for anzahlSchwarzeFelderR in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
                     for schwarzesFeld in range(anzahlSchwarzeFelderR):
@@ -608,6 +526,10 @@ class Window(QWidget):
                     if zaehlerR < self.anzahlSpalten:
                         self.level[hinweisReihe][zaehlerR] = 2
                         zaehlerR += 1
+                self.hinweiseReihen[hinweisReihe][1] = False
+                for j in range(self.anzahlSpalten):
+                    self.spalteabgeschlossen(j)
+                return
 
 
         # eindeutige Spalten vervollstaendigen
@@ -617,14 +539,14 @@ class Window(QWidget):
                 summeProSpalte += 1 + hinweisS
 
             # wenn in einer Reihe kein schwarzes Feld vorhanden ist
-            if summeProSpalte == 0:
+            if summeProSpalte == 0 and self.hinweiseSpalten[hinweisSpalte][1]:
                 self.hinweiseSpalten[hinweisSpalte][1] = False
                 for i in range(self.anzahlReihen):
                     self.level[i][hinweisSpalte] = 2
+                return
 
             # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
-            if summeProSpalte == self.anzahlReihen:
-                self.hinweiseSpalten[hinweisSpalte][1] = False
+            if summeProSpalte == self.anzahlReihen and self.hinweiseSpalten[hinweisSpalte][1]:
                 zaehlerS = 0
                 for anzahlSchwarzeFelderS in self.hinweiseInZahlenReihenSpalten[1][hinweisSpalte]:
                     for schwarzesFeld in range(anzahlSchwarzeFelderS):
@@ -633,9 +555,17 @@ class Window(QWidget):
                     if zaehlerS < self.anzahlReihen:
                         self.level[zaehlerS][hinweisSpalte] = 2
                         zaehlerS += 1
+                self.hinweiseSpalten[hinweisSpalte][1] = False
+                for i in range(self.anzahlReihen):
+                    self.reiheabgeschlossen(i)
+                return
+
+        print("nichts neues")
 
 
-        self.update()
+    def reiheLoesen(self, reihenNummer):
+        pass
+
 
 
 
