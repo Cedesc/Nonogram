@@ -1,18 +1,26 @@
-im creator mode schwarze flaechen weiss machen koennen
+KI entwickeln:
+    - Funktion, die alle moeglichen Loesungen herausfindet
+        - Funktion die ueberprueft ob eine Reihe richtig sein koennte (vorhanden, muss abgewandelt werden, damit die
+          Eingabe eine Reihe und nicht die ReihenNummer fuer das Level ist)
+    - Funktion, die alle Gemeinsamkeiten aller moeglichen Loesungen herausfindet und eintraegt
+    (KI ist dann noch nicht fertig, aber gutes Stueck weiter)
 
-felder markieren (selbst malen oder neue variable die am schluss von paintevent aufkommt)
+noch ganz cool:
+    im creator mode schwarze flaechen weiss machen koennen
 
-leben einbauen
+    tipps geben lassen indem zufaelliges feld erscheint
 
-gewinnanimation
+    neues Level erstellen im Spiel
 
-tipps geben lassen indem zufaelliges feld erscheint
+    zufällige level erstellen verbessern (eher nebeneinander etc)
 
-zufällige level erstellen verbessern (eher nebeneinander etc)
 
-KI entwickeln
+unnoetiger:
+    felder markieren (selbst malen oder neue variable die am schluss von paintevent aufkommt)
 
-neues Level erstellen im Spiel
+    leben einbauen
+
+    gewinnanimation
 
 
 
