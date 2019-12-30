@@ -567,12 +567,12 @@ class Window(QWidget):
         pass
 
 
-    def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer):
+    def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer, reihe):
         reiheLoesung = copy.copy(self.hinweiseInZahlenReihenSpalten[0][reihenNummer])
 
         zaehler = 0
         for j in range(self.anzahlSpalten):
-            if self.level[reihenNummer][j] == 1:
+            if reihe[j] == 1:
                 zaehler += 1
             elif reiheLoesung:
                 if reiheLoesung[0] < zaehler:
