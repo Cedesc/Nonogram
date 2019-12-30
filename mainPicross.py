@@ -567,6 +567,73 @@ class Window(QWidget):
         pass
 
 
+    def reiheUeberpruefenObMoeglicheLoesung2(self, reihenNummer):
+        reiheLoesung = copy.deepcopy(self.hinweiseInZahlenReihenSpalten[0][reihenNummer])
+        reiheLoesung = [2, 6]
+
+        if reiheLoesung == [0]:
+            print("Natuerlich ist die Reihe fertig, da sind keine schwarzen Felder drin.")
+            return True
+
+        for j in range(self.anzahlSpalten):
+            if self.level[reihenNummer][j] == 1:
+                reiheLoesung[0] -= 1
+            else:
+                if reiheLoesung[0] < 0:
+                    print("Reihe ist nicht richtig, zu viele schwarze Felder nebeneinander.")
+                    return False
+                if reiheLoesung[0] == 0:
+                    reiheLoesung.pop(0)
+
+
+        print(reiheLoesung)
+
+        if reiheLoesung[0] == 0:
+            reiheLoesung.pop(0)
+
+        if len(reiheLoesung) == 0:
+            print("Reihe ist fertig")
+            return True
+
+        print("Reihe ist nicht fertig")
+        return False
+
+    def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer):
+        reiheLoesung = copy.copy(self.hinweiseInZahlenReihenSpalten[0][reihenNummer])
+
+        zaehler = 0
+        for j in range(self.anzahlSpalten):
+            if self.level[reihenNummer][j] == 1:
+                zaehler += 1
+            elif reiheLoesung:
+                if reiheLoesung[0] < zaehler:
+                    # print("Reihe ist falsch, zu viele schwarze Felder nebeneinander.")
+                    return False
+                if reiheLoesung[0] > zaehler != 0:
+                    # print("Reihe ist falsch, zu wenige schwarze Felder nebeneinander.")
+                    return False
+                elif reiheLoesung[0] == zaehler:
+                    reiheLoesung.pop(0)
+                    zaehler = 0
+
+        if reiheLoesung:
+            if reiheLoesung[0] == zaehler:
+                reiheLoesung.pop(0)
+
+        if not reiheLoesung:
+            print("yess")
+            # print("Reihe kann richtig sein")
+            return True
+
+        if reiheLoesung == [0]:
+            print("yes")
+            #print("Reihe ist richtig, da keine schwarzen Felder drin sein sollen.")
+            return True
+
+        # print("Reihe ist falsch, es ist noch kein schwarzes Feld eingetragen")
+        return False
+
+
 
 
 
