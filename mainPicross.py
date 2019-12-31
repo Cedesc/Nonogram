@@ -218,8 +218,8 @@ class Window(QWidget):
             self.update()
 
         if e.key() == Qt.Key_Q:
-            self.alleMoeglichenLoesungenBerechnenZeile(5)
-            #self.reiheUeberpruefenObMoeglicheLoesung(3, [0, 0, 0, 1, 1, 1, 1, 1, 1, 1], False)
+            self.eindeutigeFelderEintragenZeile(4)
+            self.update()
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -646,6 +646,68 @@ class Window(QWidget):
 
         print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
         return alleMoeglichenLoesungen
+
+
+    def alleMoeglichenLoesungenBerechnenSpalte(self, spaltenNummer):
+        vorhandeneReihe = []
+        for i in range(self.anzahlZeilen):
+            vorhandeneReihe.append(self.level[i][spaltenNummer])
+        print(vorhandeneReihe)
+
+        anzahlFehlendeSchwarzeFelder = 0
+        for zahl in self.hinweiseInZahlenZeilenSpalten[1][spaltenNummer]:
+            anzahlFehlendeSchwarzeFelder += zahl
+        for feld in vorhandeneReihe:
+            if feld == 1:
+                anzahlFehlendeSchwarzeFelder -= 1
+
+        # Indizies raussuchen, die unbelegt sind
+        anzahlNochUnbelegteFelder = 0
+        zuBelegendeFelderIndizes = []
+        for feldIndex in range(len(vorhandeneReihe)):
+            if vorhandeneReihe[feldIndex] == 0:
+                anzahlNochUnbelegteFelder += 1
+                zuBelegendeFelderIndizes.append(feldIndex)
+
+        alleKombinationen = self.binaereKombinationen(anzahlNochUnbelegteFelder)
+
+        alleMoeglichenLoesungen = []
+        for kombiIndex in range(len(alleKombinationen)):
+            for stelleIndex in range(len(alleKombinationen[kombiIndex])):
+                vorhandeneReihe[zuBelegendeFelderIndizes[stelleIndex]] = alleKombinationen[kombiIndex][stelleIndex]
+            if self.reiheUeberpruefenObMoeglicheLoesung(spaltenNummer, vorhandeneReihe, True):
+                alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
+
+        print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
+        return alleMoeglichenLoesungen
+
+
+    def eindeutigeFelderEintragenZeile(self, zeilenNummer):
+        moeglicheLoesungen = self.alleMoeglichenLoesungenBerechnenZeile(zeilenNummer)
+        if moeglicheLoesungen == []:
+            print("Reihe ist falsch, das sollte allerdings nicht vorkommen können.")
+            return
+        if len(moeglicheLoesungen) == 1:
+            print("Jau super, beste Loesung, muss es allerdings noch implementieren.")
+            return
+
+        abgleich = list(moeglicheLoesungen[0])
+        for moeglichkeit in moeglicheLoesungen:
+            for index in range(len(moeglichkeit)):
+                if abgleich[index] == 1:
+                    if moeglichkeit[index] != 1:
+                        abgleich[index] = -2
+                else:
+                    if moeglichkeit[index] == 1:
+                        abgleich[index] = -2
+        print(abgleich)
+
+        # Gleiches ins Level uebertragen
+        for index in range(len(abgleich)):
+            if abgleich[index] == 1:
+                self.level[zeilenNummer][index] = 1
+            elif abgleich[index] != -2:
+                self.level[zeilenNummer][index] = 2
 
 
 
