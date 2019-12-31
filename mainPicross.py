@@ -221,6 +221,10 @@ class Window(QWidget):
             self.kiSchritt()
             self.update()
 
+        if e.key() == Qt.Key_Q:
+            self.alleMoeglichenLoesungenBerechnen(5)
+            #self.reiheUeberpruefenObMoeglicheLoesung(3, [0, 0, 0, 1, 1, 1, 1, 1, 1, 1])
+
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
@@ -576,10 +580,10 @@ class Window(QWidget):
                 zaehler += 1
             elif reiheLoesung:
                 if reiheLoesung[0] < zaehler:
-                    # print("Reihe ist falsch, zu viele schwarze Felder nebeneinander.")
+                    #print("Reihe ist falsch, zu viele schwarze Felder nebeneinander.")
                     return False
                 if reiheLoesung[0] > zaehler != 0:
-                    # print("Reihe ist falsch, zu wenige schwarze Felder nebeneinander.")
+                    #print("Reihe ist falsch, zu wenige schwarze Felder nebeneinander.")
                     return False
                 elif reiheLoesung[0] == zaehler:
                     reiheLoesung.pop(0)
@@ -588,21 +592,65 @@ class Window(QWidget):
         if reiheLoesung:
             if reiheLoesung[0] == zaehler:
                 reiheLoesung.pop(0)
+                zaehler = 0
+
+        if zaehler > 0:
+            #print("Reihe ist falsch, zu viele schwarze Felder insgesamt")
+            return False
 
         if not reiheLoesung:
-            print("yess")
-            # print("Reihe kann richtig sein")
+            #print("Reihe kann richtig sein")
             return True
 
         if reiheLoesung == [0]:
-            print("yes")
             #print("Reihe ist richtig, da keine schwarzen Felder drin sein sollen.")
             return True
 
-        # print("Reihe ist falsch, es ist noch kein schwarzes Feld eingetragen")
+        #print("Reihe ist falsch, es ist noch kein schwarzes Feld eingetragen")
         return False
 
 
+    def binaereKombinationen(self, anzahlStellen):
+        result = []
+        for integerZahl in range(2 ** anzahlStellen, 2 ** anzahlStellen * 2):
+            binaereZahlInString = bin(integerZahl)
+            zwischenergebnis = []
+            for stelle in range(3, len(binaereZahlInString)):
+                zwischenergebnis.append(int(binaereZahlInString[stelle]))
+            result.append(zwischenergebnis)
+
+        return result
+
+
+    def alleMoeglichenLoesungenBerechnen(self, reihenNummer):
+        vorhandeneReihe = copy.copy(self.level[reihenNummer])
+
+        anzahlFehlendeSchwarzeFelder = 0
+        for zahl in self.hinweiseInZahlenReihenSpalten[0][reihenNummer]:
+            anzahlFehlendeSchwarzeFelder += zahl
+        for feld in vorhandeneReihe:
+            if feld == 1:
+                anzahlFehlendeSchwarzeFelder -= 1
+
+        # Indizies raussuchen, die unbelegt sind
+        anzahlNochUnbelegteFelder = 0
+        zuBelegendeFelderIndizes = []
+        for feldIndex in range(len(vorhandeneReihe)):
+            if vorhandeneReihe[feldIndex] == 0:
+                anzahlNochUnbelegteFelder += 1
+                zuBelegendeFelderIndizes.append(feldIndex)
+
+        alleKombinationen = self.binaereKombinationen(anzahlNochUnbelegteFelder)
+
+        alleMoeglichenLoesungen = []
+        for kombiIndex in range(len(alleKombinationen)):
+            for stelleIndex in range(len(alleKombinationen[kombiIndex])):
+                vorhandeneReihe[zuBelegendeFelderIndizes[stelleIndex]] = alleKombinationen[kombiIndex][stelleIndex]
+            if self.reiheUeberpruefenObMoeglicheLoesung(reihenNummer, vorhandeneReihe):
+                alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
+
+        print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
+        return alleMoeglichenLoesungen
 
 
 
