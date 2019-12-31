@@ -617,11 +617,11 @@ class Window(QWidget):
         return result
 
 
-    def alleMoeglichenLoesungenBerechnenZeile(self, reihenNummer):
-        vorhandeneReihe = copy.copy(self.level[reihenNummer])
+    def alleMoeglichenLoesungenBerechnenZeile(self, zeilenNummer):
+        vorhandeneReihe = copy.copy(self.level[zeilenNummer])
 
         anzahlFehlendeSchwarzeFelder = 0
-        for zahl in self.hinweiseInZahlenZeilenSpalten[0][reihenNummer]:
+        for zahl in self.hinweiseInZahlenZeilenSpalten[0][zeilenNummer]:
             anzahlFehlendeSchwarzeFelder += zahl
         for feld in vorhandeneReihe:
             if feld == 1:
@@ -641,11 +641,14 @@ class Window(QWidget):
         for kombiIndex in range(len(alleKombinationen)):
             for stelleIndex in range(len(alleKombinationen[kombiIndex])):
                 vorhandeneReihe[zuBelegendeFelderIndizes[stelleIndex]] = alleKombinationen[kombiIndex][stelleIndex]
-            if self.reiheUeberpruefenObMoeglicheLoesung(reihenNummer, vorhandeneReihe, False):
+            if self.reiheUeberpruefenObMoeglicheLoesung(zeilenNummer, vorhandeneReihe, False):
                 alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
 
         print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
         return alleMoeglichenLoesungen
+
+
+
 
 
 
