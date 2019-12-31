@@ -28,17 +28,17 @@ class Window(QWidget):
 
         self.nachUnten = self.wH // 8     # Gesamtverschiebung nach unten
         self.nachRechts = self.wW // 8    # Gesamtverschiebung nach rechts
-        self.anzahlReihen = len(self.loesung)
+        self.anzahlZeilen = len(self.loesung)
         self.anzahlSpalten = len(self.loesung[0])
         self.level = self.leeresLevelErstellen()
         self.levelKoordinaten = self.koordinatenBestimmen()
-        self.hinweiseSpalten, self.hinweiseReihen = self.hinweiseErstellen()
+        self.hinweiseSpalten, self.hinweiseZeilen = self.hinweiseErstellen()
         self.gewonnen = False
         self.creatorModeAn = False
-        self.hinweiseInZahlenReihenSpalten = self.hinweiseInZahlenAendern()
+        self.hinweiseInZahlenZeilenSpalten = self.hinweiseInZahlenAendern()
 
-        for i in range(self.anzahlReihen):
-            self.reiheabgeschlossen(i)
+        for i in range(self.anzahlZeilen):
+            self.zeileabgeschlossen(i)
         for j in range(self.anzahlSpalten):
             self.spalteabgeschlossen(j)
 
@@ -87,9 +87,9 @@ class Window(QWidget):
                                  self.wH - self.nachUnten // 2)
 
         # horizontale Linien
-        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
-        for verschiebung in range(self.anzahlReihen + 1):
-            if verschiebung == 0 or verschiebung == self.anzahlReihen:
+        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlZeilen
+        for verschiebung in range(self.anzahlZeilen + 1):
+            if verschiebung == 0 or verschiebung == self.anzahlZeilen:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung,
@@ -112,7 +112,7 @@ class Window(QWidget):
 
         """ Rechtecke einzeichnen """
         painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
-        for i in range(self.anzahlReihen):
+        for i in range(self.anzahlZeilen):
 
             for j in range(self.anzahlSpalten):
 
@@ -152,23 +152,19 @@ class Window(QWidget):
         schriftgroesse = hoehe // 6
         painter.setFont(QFont("Arial", schriftgroesse))
 
-        # Reihen
-        # Schleife durchlaeuft self.spalten, da es an der Anzahl von in einer Spalte liegenden Feldern abhaengt,
-        # wie viele Reihen es gibt
-        for reihe in range(self.anzahlReihen):
-            if self.hinweiseReihen[reihe][1]:       # pruefen ob visible
-                painter.drawText(0, self.nachUnten + hoehe * (reihe+0.5) - schriftgroesse // 2 ,
-                                 self.nachRechts, hoehe, Qt.AlignHCenter , self.hinweiseReihen[reihe][0])
+        # Zeilen
+        for zeile in range(self.anzahlZeilen):
+            if self.hinweiseZeilen[zeile][1]:       # pruefen ob visible
+                painter.drawText(0, self.nachUnten + hoehe * (zeile+0.5) - schriftgroesse // 2,
+                                 self.nachRechts, hoehe, Qt.AlignHCenter, self.hinweiseZeilen[zeile][0])
             else:
                 painter.setPen(QColor(180,180,180))
-                painter.drawText(0, self.nachUnten + hoehe * (reihe + 0.5) - schriftgroesse // 2,
-                                 self.nachRechts, hoehe, Qt.AlignHCenter, self.hinweiseReihen[reihe][0])
+                painter.drawText(0, self.nachUnten + hoehe * (zeile + 0.5) - schriftgroesse // 2,
+                                 self.nachRechts, hoehe, Qt.AlignHCenter, self.hinweiseZeilen[zeile][0])
                 painter.setPen(QColor(0, 0, 0))
 
 
         # Spalten
-        # Schleife durchlaeuft self.reihen, da es an der Anzahl von in einer Reihe liegenden Feldern abhaengt,
-        # wie viele Spalten es gibt
         for spalte in range(self.anzahlSpalten):
             if self.hinweiseSpalten[spalte][1]:     # pruefen ob visible
                 painter.drawText(self.nachRechts + breite * (spalte+0.5) - schriftgroesse // 2,
@@ -222,8 +218,8 @@ class Window(QWidget):
             self.update()
 
         if e.key() == Qt.Key_Q:
-            self.alleMoeglichenLoesungenBerechnen(5)
-            #self.reiheUeberpruefenObMoeglicheLoesung(3, [0, 0, 0, 1, 1, 1, 1, 1, 1, 1])
+            self.alleMoeglichenLoesungenBerechnenZeile(5)
+            #self.reiheUeberpruefenObMoeglicheLoesung(3, [0, 0, 0, 1, 1, 1, 1, 1, 1, 1], False)
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -231,7 +227,7 @@ class Window(QWidget):
         #print("               ", pos.x(), pos.y())     # zum ueberpruefen wo man klickt
 
         """ Eingaben moeglich machen """
-        for i in range(self.anzahlReihen):
+        for i in range(self.anzahlZeilen):
             for j in range(self.anzahlSpalten):
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
                 and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
@@ -250,12 +246,12 @@ class Window(QWidget):
                             self.level[i][j] = -1
                         elif self.loesung[i][j] == 1:
                             self.level[i][j] = 1        # richtiges Feld
-                            self.reiheabgeschlossen(i)
+                            self.zeileabgeschlossen(i)
                             self.spalteabgeschlossen(j)
 
                         """ Ueberpruefen ob Level geschafft ist """
                         self.gewonnen = True
-                        for i in range(self.anzahlReihen):
+                        for i in range(self.anzahlZeilen):
                             for j in range(self.anzahlSpalten):
                                 if self.loesung[i][j] == 1 and self.level[i][j] != 1:
                                     self.gewonnen = False
@@ -267,11 +263,11 @@ class Window(QWidget):
     def leeresLevelErstellen(self):
 
         result = []
-        for i in range(self.anzahlReihen):
-            reihe = []
+        for i in range(self.anzahlZeilen):
+            zeile = []
             for j in range(self.anzahlSpalten):
-                reihe.append(0)
-            result.append(reihe)
+                zeile.append(0)
+            result.append(zeile)
         return result
 
 
@@ -284,17 +280,17 @@ class Window(QWidget):
 
         # reine Vorberechnung
         breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
-        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlReihen
+        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlZeilen
 
-        for i in range(self.anzahlReihen):
-            reihe = []
+        for i in range(self.anzahlZeilen):
+            zeile = []
             for j in range(self.anzahlSpalten):
 
                 punktLinksOben = (self.nachRechts + breite * j, self.nachUnten + hoehe * i)
                 punktRechtsUnten = (self.nachRechts + breite * (j+1), self.nachUnten + hoehe * (i+1))
 
-                reihe.append( ( punktLinksOben , punktRechtsUnten ) )
-            result.append(reihe)
+                zeile.append( ( punktLinksOben , punktRechtsUnten ) )
+            result.append(zeile)
         return result
 
 
@@ -303,8 +299,8 @@ class Window(QWidget):
 
         # alle Hinweise wieder schwarz machen
         # schnellere Alternative zu hinweisSichtbarkeitpruefen
-        for i in range(len(self.hinweiseReihen)):
-            self.hinweiseReihen[i][1] = True
+        for i in range(len(self.hinweiseZeilen)):
+            self.hinweiseZeilen[i][1] = True
         for i in range(len(self.hinweiseSpalten)):
             self.hinweiseSpalten[i][1] = True
 
@@ -316,8 +312,8 @@ class Window(QWidget):
 
         # alle Hinweise grau machen
         # schnellere Alternative zu hinweisSichtbarkeitpruefen
-        for i in range(len(self.hinweiseReihen)):
-            self.hinweiseReihen[i][1] = False
+        for i in range(len(self.hinweiseZeilen)):
+            self.hinweiseZeilen[i][1] = False
         for i in range(len(self.hinweiseSpalten)):
             self.hinweiseSpalten[i][1] = False
 
@@ -331,7 +327,7 @@ class Window(QWidget):
         for i in range(self.anzahlSpalten):
             zaehler = 0
             spalteHinweise = ""
-            for j in range(self.anzahlReihen):
+            for j in range(self.anzahlZeilen):
                 if self.loesung[j][i] == 1:
                     zaehler += 1
                 else:
@@ -351,30 +347,30 @@ class Window(QWidget):
                     spalteHinweise = str(zaehler)
             obenHinweise.append([spalteHinweise, True])
 
-        # Hinweise fuer Reihen erstellen
+        # Hinweise fuer Zeilen erstellen
         linksHinweise = []
-        for i in range(self.anzahlReihen):
+        for i in range(self.anzahlZeilen):
             zaehler = 0
-            reiheHinweise = ""
+            zeileHinweise = ""
             for j in range(self.anzahlSpalten):
                 if self.loesung[i][j] == 1:
                     zaehler += 1
                 else:
                     if zaehler != 0:
-                        if reiheHinweise:
-                            reiheHinweise += "  " + str(zaehler)
+                        if zeileHinweise:
+                            zeileHinweise += "  " + str(zaehler)
                         else:
-                            reiheHinweise = str(zaehler)
+                            zeileHinweise = str(zaehler)
 
                     zaehler = 0
-            if not reiheHinweise and zaehler == 0:   # wenn kein Feld schwarz ist
-                reiheHinweise = "0"
+            if not zeileHinweise and zaehler == 0:   # wenn kein Feld schwarz ist
+                zeileHinweise = "0"
             if zaehler != 0:       # wenn das letzte Feld schwarz ist
-                if reiheHinweise:
-                    reiheHinweise += "  " + str(zaehler)
+                if zeileHinweise:
+                    zeileHinweise += "  " + str(zaehler)
                 else:
-                    reiheHinweise = str(zaehler)
-            linksHinweise.append([reiheHinweise, True])
+                    zeileHinweise = str(zaehler)
+            linksHinweise.append([zeileHinweise, True])
 
         return obenHinweise, linksHinweise
 
@@ -384,34 +380,34 @@ class Window(QWidget):
         self.level = copy.deepcopy(self.loesung)
 
 
-    def reiheabgeschlossen(self, reihe):
-        # pruefen ob Reihe abgeschlossen ist, indem die schwarzen Felder der Loesung in der Reihe mit den
+    def zeileabgeschlossen(self, zeile):
+        # pruefen ob Zeile abgeschlossen ist, indem die schwarzen Felder der Loesung in der Zeile mit den
         # schwarzen Feldern des Levels verglichen wird
         for i in range(self.anzahlSpalten):
-            if self.loesung[reihe][i] == 1:
-                if self.level[reihe][i] != 1:
+            if self.loesung[zeile][i] == 1:
+                if self.level[zeile][i] != 1:
                     return False
 
-        # unausgefuellter Rest der Reihe blocken
+        # unausgefuellter Rest der Zeile blocken
         for i in range(self.anzahlSpalten):
-            if self.level[reihe][i] == 0:
-                self.level[reihe][i] = 2
+            if self.level[zeile][i] == 0:
+                self.level[zeile][i] = 2
 
         # Hinweise ausgrauen
-        self.hinweiseReihen[reihe][1] = False
+        self.hinweiseZeilen[zeile][1] = False
 
         return True
 
 
     def spalteabgeschlossen(self, spalte):
-        # pruefen ob Spalte abgeschlossen ist mit analogem Verfahren zu reiheabgeschlossen
-        for i in range(self.anzahlReihen):
+        # pruefen ob Spalte abgeschlossen ist mit analogem Verfahren zu zeileabgeschlossen
+        for i in range(self.anzahlZeilen):
             if self.loesung[i][spalte] == 1:
                 if self.level[i][spalte] != 1:
                     return False
 
         # unausgefuellter Rest der Spalte blocken
-        for i in range(self.anzahlReihen):
+        for i in range(self.anzahlZeilen):
             if self.level[i][spalte] == 0:
                 self.level[i][spalte] = 2
 
@@ -424,19 +420,19 @@ class Window(QWidget):
     def hinweisSichtbarkeitPruefen(self):
         for i in range(self.anzahlSpalten):
             self.spalteabgeschlossen(i)
-        for i in range(self.anzahlReihen):
-            self.reiheabgeschlossen(i)
+        for i in range(self.anzahlZeilen):
+            self.zeileabgeschlossen(i)
 
 
     def creatorModeWechseln(self):
 
         # Loesung mit nur schwarzen Feldern erstellen, damit man keinen Fehler machen kann und nicht vorher abbricht
         vollstaendigeLoesung = []
-        for i in range(self.anzahlReihen):
-            reihe = []
+        for i in range(self.anzahlZeilen):
+            zeile = []
             for j in range(self.anzahlSpalten):
-                reihe.append(1)
-            vollstaendigeLoesung.append(reihe)
+                zeile.append(1)
+            vollstaendigeLoesung.append(zeile)
 
         self.loesung = vollstaendigeLoesung
 
@@ -444,8 +440,8 @@ class Window(QWidget):
         self.level = self.leeresLevelErstellen()
 
         # Hinweise entfernen
-        for i in range(self.anzahlReihen):
-            self.hinweiseReihen[i][0] = ""
+        for i in range(self.anzahlZeilen):
+            self.hinweiseZeilen[i][0] = ""
         for i in range(self.anzahlSpalten):
             self.hinweiseSpalten[i][0] = ""
 
@@ -456,7 +452,7 @@ class Window(QWidget):
         txtDatei = open("levelSpeicher.txt", "w")
 
         # alles ausser Einsen und Nullen aus der Datei entfernen
-        for i in range(self.anzahlReihen):
+        for i in range(self.anzahlZeilen):
             for j in range(self.anzahlSpalten):
                 if self.level[i][j] != 1:
                     self.level[i][j] = 0
@@ -473,18 +469,18 @@ class Window(QWidget):
 
 
     def hinweiseInZahlenAendern(self):
-        neueHinweiseReihen = []
-        for liste in self.hinweiseReihen:
-            proReihe = []
+        neueHinweiseZeilen = []
+        for liste in self.hinweiseZeilen:
+            proZeile = []
             zahlR = ""
             for zeichen in liste[0]:
                 if zeichen == " " and zahlR != "":
-                    proReihe.append(int(zahlR))
+                    proZeile.append(int(zahlR))
                     zahlR = ""
                 else:
                     zahlR += zeichen
-            proReihe.append(int(zahlR))
-            neueHinweiseReihen.append(proReihe)
+            proZeile.append(int(zahlR))
+            neueHinweiseZeilen.append(proZeile)
 
         neueHinweiseSpalten = []
         for liste in self.hinweiseSpalten:
@@ -499,7 +495,7 @@ class Window(QWidget):
             proSpalte.append(int(zahlS))
             neueHinweiseSpalten.append(proSpalte)
 
-        return neueHinweiseReihen, neueHinweiseSpalten
+        return neueHinweiseZeilen, neueHinweiseSpalten
 
 
     def kiAktivieren(self):
@@ -507,72 +503,71 @@ class Window(QWidget):
 
 
     def kiSchritt(self):
-        # eindeutige Reihen vervollstaendigen
-        for hinweisReihe in range(len(self.hinweiseInZahlenReihenSpalten[0])):
-            summeProReihe = -1
-            for hinweisR in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
-                summeProReihe += 1 + hinweisR
+        # eindeutige Zeilen vervollstaendigen
+        for hinweisZeile in range(len(self.hinweiseInZahlenZeilenSpalten[0])):
+            summeProZeile = -1
+            for hinweisR in self.hinweiseInZahlenZeilenSpalten[0][hinweisZeile]:
+                summeProZeile += 1 + hinweisR
 
-            # wenn in einer Reihe kein schwarzes Feld vorhanden ist
-            if summeProReihe == 0 and self.hinweiseReihen[hinweisReihe][1]:
-                self.hinweiseReihen[hinweisReihe][1] = False
+            # wenn in einer Zeile kein schwarzes Feld vorhanden ist
+            if summeProZeile == 0 and self.hinweiseZeilen[hinweisZeile][1]:
+                self.hinweiseZeilen[hinweisZeile][1] = False
                 for j in range(self.anzahlSpalten):
-                    self.level[hinweisReihe][j] = 2
+                    self.level[hinweisZeile][j] = 2
                 return
 
-            # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
-            if summeProReihe == self.anzahlSpalten and self.hinweiseReihen[hinweisReihe][1]:
+            # wenn es in einer Zeile eine eindeutige Loesung an schwarzen Feldern gibt
+            if summeProZeile == self.anzahlSpalten and self.hinweiseZeilen[hinweisZeile][1]:
                 zaehlerR = 0
-                for anzahlSchwarzeFelderR in self.hinweiseInZahlenReihenSpalten[0][hinweisReihe]:
+                for anzahlSchwarzeFelderR in self.hinweiseInZahlenZeilenSpalten[0][hinweisZeile]:
                     for schwarzesFeld in range(anzahlSchwarzeFelderR):
-                        self.level[hinweisReihe][zaehlerR] = 1
+                        self.level[hinweisZeile][zaehlerR] = 1
                         zaehlerR += 1
                     if zaehlerR < self.anzahlSpalten:
-                        self.level[hinweisReihe][zaehlerR] = 2
+                        self.level[hinweisZeile][zaehlerR] = 2
                         zaehlerR += 1
-                self.hinweiseReihen[hinweisReihe][1] = False
+                self.hinweiseZeilen[hinweisZeile][1] = False
                 for j in range(self.anzahlSpalten):
                     self.spalteabgeschlossen(j)
                 return
 
 
         # eindeutige Spalten vervollstaendigen
-        for hinweisSpalte in range(len(self.hinweiseInZahlenReihenSpalten[1])):
+        for hinweisSpalte in range(len(self.hinweiseInZahlenZeilenSpalten[1])):
             summeProSpalte = -1
-            for hinweisS in self.hinweiseInZahlenReihenSpalten[1][hinweisSpalte]:
+            for hinweisS in self.hinweiseInZahlenZeilenSpalten[1][hinweisSpalte]:
                 summeProSpalte += 1 + hinweisS
 
-            # wenn in einer Reihe kein schwarzes Feld vorhanden ist
+            # wenn in einer Spalte kein schwarzes Feld vorhanden ist
             if summeProSpalte == 0 and self.hinweiseSpalten[hinweisSpalte][1]:
                 self.hinweiseSpalten[hinweisSpalte][1] = False
-                for i in range(self.anzahlReihen):
+                for i in range(self.anzahlZeilen):
                     self.level[i][hinweisSpalte] = 2
                 return
 
-            # wenn es in einer Reihe eine eindeutige Loesung an schwarzen Feldern gibt
-            if summeProSpalte == self.anzahlReihen and self.hinweiseSpalten[hinweisSpalte][1]:
+            # wenn es in einer Spalte eine eindeutige Loesung an schwarzen Feldern gibt
+            if summeProSpalte == self.anzahlZeilen and self.hinweiseSpalten[hinweisSpalte][1]:
                 zaehlerS = 0
-                for anzahlSchwarzeFelderS in self.hinweiseInZahlenReihenSpalten[1][hinweisSpalte]:
+                for anzahlSchwarzeFelderS in self.hinweiseInZahlenZeilenSpalten[1][hinweisSpalte]:
                     for schwarzesFeld in range(anzahlSchwarzeFelderS):
                         self.level[zaehlerS][hinweisSpalte] = 1
                         zaehlerS += 1
-                    if zaehlerS < self.anzahlReihen:
+                    if zaehlerS < self.anzahlZeilen:
                         self.level[zaehlerS][hinweisSpalte] = 2
                         zaehlerS += 1
                 self.hinweiseSpalten[hinweisSpalte][1] = False
-                for i in range(self.anzahlReihen):
-                    self.reiheabgeschlossen(i)
+                for i in range(self.anzahlZeilen):
+                    self.zeileabgeschlossen(i)
                 return
 
         print("nichts neues")
 
 
-    def reiheLoesen(self, reihenNummer):
-        pass
-
-
-    def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer, reihe):
-        reiheLoesung = copy.copy(self.hinweiseInZahlenReihenSpalten[0][reihenNummer])
+    def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer, reihe, istSpalte):
+        if istSpalte:
+            reiheLoesung = copy.copy(self.hinweiseInZahlenZeilenSpalten[1][reihenNummer])
+        else:
+            reiheLoesung = copy.copy(self.hinweiseInZahlenZeilenSpalten[0][reihenNummer])
 
         zaehler = 0
         for j in range(self.anzahlSpalten):
@@ -622,11 +617,11 @@ class Window(QWidget):
         return result
 
 
-    def alleMoeglichenLoesungenBerechnen(self, reihenNummer):
+    def alleMoeglichenLoesungenBerechnenZeile(self, reihenNummer):
         vorhandeneReihe = copy.copy(self.level[reihenNummer])
 
         anzahlFehlendeSchwarzeFelder = 0
-        for zahl in self.hinweiseInZahlenReihenSpalten[0][reihenNummer]:
+        for zahl in self.hinweiseInZahlenZeilenSpalten[0][reihenNummer]:
             anzahlFehlendeSchwarzeFelder += zahl
         for feld in vorhandeneReihe:
             if feld == 1:
@@ -646,7 +641,7 @@ class Window(QWidget):
         for kombiIndex in range(len(alleKombinationen)):
             for stelleIndex in range(len(alleKombinationen[kombiIndex])):
                 vorhandeneReihe[zuBelegendeFelderIndizes[stelleIndex]] = alleKombinationen[kombiIndex][stelleIndex]
-            if self.reiheUeberpruefenObMoeglicheLoesung(reihenNummer, vorhandeneReihe):
+            if self.reiheUeberpruefenObMoeglicheLoesung(reihenNummer, vorhandeneReihe, False):
                 alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
 
         print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
