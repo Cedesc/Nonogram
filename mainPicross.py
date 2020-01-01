@@ -42,6 +42,9 @@ class Window(QWidget):
         for j in range(self.anzahlSpalten):
             self.spalteabgeschlossen(j)
 
+        self.kiErlaubt = True
+        self.kiZaehler = 0  # Zaehler um bei KI Reihen nacheinander statt alle auf einmal auszufuellen
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.hinweiseInZahlenAendern()
@@ -63,8 +66,27 @@ class Window(QWidget):
         ''' Netz aufbauen '''
         painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
 
-        # vertikale Linien
+        # hoehe und breite eines Felds
+        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlZeilen
         breite = (self.wW - 2 * self.nachRechts) // self.anzahlSpalten
+
+        # KI - Zeilenmarkierung
+        if self.kiErlaubt and not self.gewonnen:
+            if self.kiZaehler < self.anzahlZeilen:
+                painter.fillRect(0,
+                                 self.nachUnten + hoehe * self.kiZaehler,
+                                 self.wW,
+                                 hoehe,
+                                 QColor(200,200,0))
+            else:
+                painter.fillRect(self.nachRechts + breite * (self.kiZaehler - self.anzahlZeilen),
+                                 0,
+                                 breite,
+                                 self.wH,
+                                 QColor(200,200,0))
+
+
+        # vertikale Linien
         for verschiebung in range(self.anzahlSpalten + 1):
             if verschiebung == 0 or verschiebung == self.anzahlSpalten:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
@@ -87,7 +109,6 @@ class Window(QWidget):
                                  self.wH - self.nachUnten // 2)
 
         # horizontale Linien
-        hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlZeilen
         for verschiebung in range(self.anzahlZeilen + 1):
             if verschiebung == 0 or verschiebung == self.anzahlZeilen:
                 painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
@@ -212,13 +233,35 @@ class Window(QWidget):
             self.creatorModelevelSpeichern()
             print("Level abgespeichert")
 
-        # K druecken um KI das Level loesen zu lassen
+        # P druecken um KI zu erlauben oder zu verbieten
+        if e.key() == Qt.Key_P:
+            if self.kiErlaubt:
+                self.kiErlaubt = False
+                print("KI verboten")
+            else:
+                self.kiErlaubt = True
+                print("KI erlaubt")
+            self.update()
+
         if e.key() == Qt.Key_K:
-            self.kiSchritt()
+            self.kiSchrittEindeutigeReihen()
+            self.update()
+
+        if e.key() == Qt.Key_J:
+            while self.kiSchrittEindeutigeReihen():
+                pass
             self.update()
 
         if e.key() == Qt.Key_Q:
-            self.eindeutigeFelderEintragenZeile(4)
+            while not self.gewonnen:
+                self.kiSchrittEindeutigeFelder()
+                self.update()
+                if self.kiZaehler == 0:
+                    break
+            self.update()
+
+        if e.key() == Qt.Key_W:
+            self.kiSchrittEindeutigeFelder()
             self.update()
 
 
@@ -249,12 +292,7 @@ class Window(QWidget):
                             self.zeileabgeschlossen(i)
                             self.spalteabgeschlossen(j)
 
-                        """ Ueberpruefen ob Level geschafft ist """
-                        self.gewonnen = True
-                        for i in range(self.anzahlZeilen):
-                            for j in range(self.anzahlSpalten):
-                                if self.loesung[i][j] == 1 and self.level[i][j] != 1:
-                                    self.gewonnen = False
+                        self.pruefenObGewonnen()
 
                     self.update()
 
@@ -305,6 +343,20 @@ class Window(QWidget):
             self.hinweiseSpalten[i][1] = True
 
         self.gewonnen = False       # hebt Sperre auf, die Verhindert, dass man neu zeichnen kann
+
+
+    def pruefenObGewonnen(self):
+        """ Ueberpruefen ob Level geschafft ist """
+        self.gewonnen = True
+        for i in range(self.anzahlZeilen):
+            for j in range(self.anzahlSpalten):
+                if self.loesung[i][j] == 1 and self.level[i][j] != 1:
+                    self.gewonnen = False
+        if self.gewonnen:
+            for i in range(len(self.hinweiseZeilen)):
+                self.hinweiseZeilen[i][1] = False
+            for i in range(len(self.hinweiseSpalten)):
+                self.hinweiseSpalten[i][1] = False
 
 
     def loesungAnzeigen(self):
@@ -502,7 +554,7 @@ class Window(QWidget):
         self.timer.start(1000)
 
 
-    def kiSchritt(self):
+    def kiSchrittEindeutigeReihen(self):
         # eindeutige Zeilen vervollstaendigen
         for hinweisZeile in range(len(self.hinweiseInZahlenZeilenSpalten[0])):
             summeProZeile = -1
@@ -514,7 +566,7 @@ class Window(QWidget):
                 self.hinweiseZeilen[hinweisZeile][1] = False
                 for j in range(self.anzahlSpalten):
                     self.level[hinweisZeile][j] = 2
-                return
+                return True
 
             # wenn es in einer Zeile eine eindeutige Loesung an schwarzen Feldern gibt
             if summeProZeile == self.anzahlSpalten and self.hinweiseZeilen[hinweisZeile][1]:
@@ -529,7 +581,7 @@ class Window(QWidget):
                 self.hinweiseZeilen[hinweisZeile][1] = False
                 for j in range(self.anzahlSpalten):
                     self.spalteabgeschlossen(j)
-                return
+                return True
 
 
         # eindeutige Spalten vervollstaendigen
@@ -543,7 +595,7 @@ class Window(QWidget):
                 self.hinweiseSpalten[hinweisSpalte][1] = False
                 for i in range(self.anzahlZeilen):
                     self.level[i][hinweisSpalte] = 2
-                return
+                return True
 
             # wenn es in einer Spalte eine eindeutige Loesung an schwarzen Feldern gibt
             if summeProSpalte == self.anzahlZeilen and self.hinweiseSpalten[hinweisSpalte][1]:
@@ -558,9 +610,10 @@ class Window(QWidget):
                 self.hinweiseSpalten[hinweisSpalte][1] = False
                 for i in range(self.anzahlZeilen):
                     self.zeileabgeschlossen(i)
-                return
+                return True
 
         print("nichts neues")
+        return False
 
 
     def reiheUeberpruefenObMoeglicheLoesung(self, reihenNummer, reihe, istSpalte):
@@ -644,7 +697,6 @@ class Window(QWidget):
             if self.reiheUeberpruefenObMoeglicheLoesung(zeilenNummer, vorhandeneReihe, False):
                 alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
 
-        print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
         return alleMoeglichenLoesungen
 
 
@@ -652,7 +704,6 @@ class Window(QWidget):
         vorhandeneReihe = []
         for i in range(self.anzahlZeilen):
             vorhandeneReihe.append(self.level[i][spaltenNummer])
-        print(vorhandeneReihe)
 
         anzahlFehlendeSchwarzeFelder = 0
         for zahl in self.hinweiseInZahlenZeilenSpalten[1][spaltenNummer]:
@@ -678,17 +729,21 @@ class Window(QWidget):
             if self.reiheUeberpruefenObMoeglicheLoesung(spaltenNummer, vorhandeneReihe, True):
                 alleMoeglichenLoesungen.append(tuple(vorhandeneReihe))
 
-        print("moegliche Loesungen :  ", alleMoeglichenLoesungen)
         return alleMoeglichenLoesungen
 
 
     def eindeutigeFelderEintragenZeile(self, zeilenNummer):
         moeglicheLoesungen = self.alleMoeglichenLoesungenBerechnenZeile(zeilenNummer)
-        if moeglicheLoesungen == []:
-            print("Reihe ist falsch, das sollte allerdings nicht vorkommen können.")
+        if not moeglicheLoesungen:
+            print("Reihe ist falsch (keine moegliche Loesung), das sollte allerdings nicht vorkommen koennen.")
             return
         if len(moeglicheLoesungen) == 1:
-            print("Jau super, beste Loesung, muss es allerdings noch implementieren.")
+            # print("Jau super, Zeile fertig.")
+            self.level[zeilenNummer] = list(moeglicheLoesungen[0])
+            for index in range(self.anzahlSpalten):
+                if self.level[zeilenNummer][index] == 0:
+                    self.level[zeilenNummer][index] = 2
+            self.hinweiseZeilen[zeilenNummer][1] = False
             return
 
         abgleich = list(moeglicheLoesungen[0])
@@ -700,14 +755,60 @@ class Window(QWidget):
                 else:
                     if moeglichkeit[index] == 1:
                         abgleich[index] = -2
-        print(abgleich)
 
         # Gleiches ins Level uebertragen
-        for index in range(len(abgleich)):
+        for index in range(self.anzahlSpalten):
             if abgleich[index] == 1:
                 self.level[zeilenNummer][index] = 1
             elif abgleich[index] != -2:
                 self.level[zeilenNummer][index] = 2
+
+
+    def eindeutigeFelderEintragenSpalte(self, spaltenNummer):
+        moeglicheLoesungen = self.alleMoeglichenLoesungenBerechnenSpalte(spaltenNummer)
+        if not moeglicheLoesungen:
+            print("Spalte ist falsch (keine moegliche Loesung), das sollte allerdings nicht vorkommen koennen.")
+            return
+        if len(moeglicheLoesungen) == 1:
+            # print("Jau super, Spalte fertig.")
+            for i in range(self.anzahlZeilen):
+                self.level[i][spaltenNummer] = moeglicheLoesungen[0][i]
+            for index in range(self.anzahlZeilen):
+                if self.level[index][spaltenNummer] == 0:
+                    self.level[index][spaltenNummer] = 2
+            self.hinweiseSpalten[spaltenNummer][1] = False
+            return
+
+        abgleich = list(moeglicheLoesungen[0])
+        for moeglichkeit in moeglicheLoesungen:
+            for index in range(len(moeglichkeit)):
+                if abgleich[index] == 1:
+                    if moeglichkeit[index] != 1:
+                        abgleich[index] = -2
+                else:
+                    if moeglichkeit[index] == 1:
+                        abgleich[index] = -2
+
+        # Gleiches ins Level uebertragen
+        for index in range(self.anzahlSpalten):
+            if abgleich[index] == 1:
+                self.level[index][spaltenNummer] = 1
+            elif abgleich[index] != -2:
+                self.level[index][spaltenNummer] = 2
+
+
+    def kiSchrittEindeutigeFelder(self):
+
+        if self.kiZaehler < self.anzahlZeilen:
+            self.eindeutigeFelderEintragenZeile(self.kiZaehler)
+        else:
+            self.eindeutigeFelderEintragenSpalte(self.kiZaehler - self.anzahlZeilen)
+        self.kiZaehler = (self.kiZaehler + 1) % (self.anzahlZeilen + self.anzahlSpalten)
+
+        if self.kiZaehler == 0:
+            self.pruefenObGewonnen()
+
+        print("KI - Schritt  :   ", self.kiZaehler)
 
 
 
