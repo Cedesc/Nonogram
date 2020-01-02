@@ -1,10 +1,14 @@
+
+- Tastensteuerung ordnen, uebersichtlicher machen und H (Hilfe) ueberarbeiten!!!
+
 KI entwickeln:
     - Funktion, die alle moeglichen Loesungen herausfindet (vorhanden)
         - Funktion die ueberprueft ob eine Reihe richtig sein koennte (vorhanden)
     - Funktion, die alle Gemeinsamkeiten aller moeglichen Loesungen herausfindet und eintraegt (vorhanden)
-    - Backtracking
+    ( - Backtracking nicht noetig, da jedes eindeutige Level sich bis hierhin bereits geloest hat, oder?? )
 
-    - alles zusammenfuegen und mit Timer nach und nach erstellen lassen
+    - alles zusammenfuegen
+    - Timer nach und nach erstellen lassen
 
 noch ganz cool:
     im creator mode schwarze flaechen weiss machen koennen

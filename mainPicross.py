@@ -37,17 +37,18 @@ class Window(QWidget):
         self.creatorModeAn = False
         self.hinweiseInZahlenZeilenSpalten = self.hinweiseInZahlenAendern()
 
+        # Reihen mit 0 bereits auskreuzen
         for i in range(self.anzahlZeilen):
             self.zeileabgeschlossen(i)
         for j in range(self.anzahlSpalten):
             self.spalteabgeschlossen(j)
 
+        self.geaenderteHinweise = False
         self.kiErlaubt = True
         self.kiZaehler = 0  # Zaehler um bei KI Reihen nacheinander statt alle auf einmal auszufuellen
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update)
-        self.hinweiseInZahlenAendern()
+        #self.timer = QTimer(self)
+        #self.timer.timeout.connect(self.update)
 
         self.keyPressEvent = self.fn
         self.show()
@@ -243,15 +244,18 @@ class Window(QWidget):
                 print("KI erlaubt")
             self.update()
 
+        # KI :  K druecken um je eine eindeutige Reihen zu vervollstaendigen
         if e.key() == Qt.Key_K:
             self.kiSchrittEindeutigeReihen()
             self.update()
 
+        # KI :  J druecken um alle eindeutige Reihen zu vervollstaendigen
         if e.key() == Qt.Key_J:
             while self.kiSchrittEindeutigeReihen():
                 pass
             self.update()
 
+        # KI :  Q druecken um jede Zeile und jede Spalte je einmal abzugehen und alle eindeutigen Felder einzutragen
         if e.key() == Qt.Key_Q:
             while not self.gewonnen:
                 self.kiSchrittEindeutigeFelder()
@@ -260,9 +264,24 @@ class Window(QWidget):
                     break
             self.update()
 
+        # KI :  W druecken um eine Reihe/Spalte weiterzugehen und alle eindeutigen Felder einzutragen
         if e.key() == Qt.Key_W:
             self.kiSchrittEindeutigeFelder()
             self.update()
+
+        # KI :  A druecken um neue Hinweise einzutragen
+        if e.key() == Qt.Key_A:
+            self.hinweiseZeilen, self.hinweiseSpalten = self.hinweiseInStringsAendern(self.eingabeDerHinweise())
+            self.hinweiseInZahlenZeilenSpalten = self.hinweiseInZahlenAendern()
+            self.geaenderteHinweise = True
+            self.update()
+
+        # KI :  Y druecken um KI komplett durchlaufen zu lassen
+        if e.key() == Qt.Key_Y:
+            self.kiDurchlaufenLassen()
+            self.update()
+
+
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -701,9 +720,7 @@ class Window(QWidget):
 
 
     def alleMoeglichenLoesungenBerechnenSpalte(self, spaltenNummer):
-        vorhandeneReihe = []
-        for i in range(self.anzahlZeilen):
-            vorhandeneReihe.append(self.level[i][spaltenNummer])
+        vorhandeneReihe = self.spalteAlsEinzelneListe(spaltenNummer)
 
         anzahlFehlendeSchwarzeFelder = 0
         for zahl in self.hinweiseInZahlenZeilenSpalten[1][spaltenNummer]:
@@ -809,6 +826,103 @@ class Window(QWidget):
             self.pruefenObGewonnen()
 
         print("KI - Schritt  :   ", self.kiZaehler)
+
+
+    def spalteAlsEinzelneListe(self, spaltenNummer):
+        result = []
+        for i in range(self.anzahlZeilen):
+            result.append(self.level[i][spaltenNummer])
+        return result
+
+
+    def hinweiseInStringsAendern(self, liste):
+        resultZeile = []
+        for zeile in liste[0]:
+            hinweiseStringZeile = str(zeile[0])
+            if len(zeile) > 1:
+                for zahlIndex in range(1, len(zeile)):
+                    hinweiseStringZeile += "  " + str(zeile[zahlIndex])
+            resultZeile.append([hinweiseStringZeile, True])
+
+        resultSpalte = []
+        for spalte in liste[1]:
+            hinweiseStringSpalte = str(spalte[0])
+            if len(spalte) > 1:
+                for zahlIndex in range(1, len(spalte)):
+                    hinweiseStringSpalte += "\n" + str(spalte[zahlIndex])
+            resultSpalte.append([hinweiseStringSpalte, True])
+
+        return resultZeile, resultSpalte
+
+
+    def eingabeDerHinweise(self):
+        datenAlleZeilen = []
+        for zeilenNummer in range(self.anzahlZeilen):
+            rohdatenZeile = list(input("Zeile Nr." + str(zeilenNummer) + " :  "))
+
+            verarbeiteteDatenZeile = []
+            momentaneZahlZ = ""
+            for i in rohdatenZeile:
+                if ',' != i != ' ':
+                    momentaneZahlZ += i
+                elif momentaneZahlZ != "":
+                    verarbeiteteDatenZeile.append(int(momentaneZahlZ))
+                    momentaneZahlZ = ""
+            if momentaneZahlZ != "":
+                verarbeiteteDatenZeile.append(int(momentaneZahlZ))
+
+
+            datenAlleZeilen.append(verarbeiteteDatenZeile)
+
+        datenAlleSpalten = []
+        for spaltenNummer in range(self.anzahlSpalten):
+            rohdatenSpalte = list(input("Spalte Nr." + str(spaltenNummer) + " :  "))
+
+            verarbeiteteDatenSpalte = []
+            momentaneZahlS = ""
+            for i in rohdatenSpalte:
+                if ',' != i != ' ':
+                    momentaneZahlS += i
+                elif momentaneZahlS != "":
+                    verarbeiteteDatenSpalte.append(int(momentaneZahlS))
+                    momentaneZahlS = ""
+            if momentaneZahlS != "":
+                verarbeiteteDatenSpalte.append(int(momentaneZahlS))
+
+            datenAlleSpalten.append(verarbeiteteDatenSpalte)
+
+        """print("Zeilen :  ", datenAlleZeilen)
+        print("Spalten :  ", datenAlleSpalten)
+        while input("Eingabe korrekt? (y/n)  ") != 'y':
+            print(isinstance(datenAlleSpalten, list))
+            datenAlleZeilen = input("Zeilen :  ")
+            datenAlleSpalten = input("Spalten :  ")
+            print()
+            print("also korrekte Zeilen :  ", datenAlleZeilen)
+            print("also korrekte Spalten :   ", datenAlleSpalten)
+            if input("abbrechen? (y/n)") == 'y':
+                self.close()"""
+
+
+        return datenAlleZeilen, datenAlleSpalten
+
+
+    def kiDurchlaufenLassen(self):
+        while self.kiSchrittEindeutigeReihen():
+            pass
+
+        while not self.gewonnen:
+            self.kiSchrittEindeutigeFelder()
+            self.update()
+            if self.kiZaehler == 0:
+                fertig = True
+                for zeile in self.level:
+                    for feld in zeile:
+                        if feld == 0:
+                            fertig = False
+                if fertig:
+                    break
+
 
 
 
