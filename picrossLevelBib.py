@@ -170,6 +170,7 @@ nummer06 = [
            ]
 
 
+# Testlevel fuer Laufzeitberechnung der KI
 versuch = [
             [1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
             [1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1],

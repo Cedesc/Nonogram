@@ -10,6 +10,8 @@ import picrossSettings as ps
 Erklaerung: 
     - 3 geschachtelte Listen mit Tiefe 2, 1. mit der Loesung, 2. mit dem momentanen Stand, 3. mit Koordinaten
     - linke Maustaste um Feld zu bestaetigen, rechte Maustaste um Feld zu blocken
+    - Creator-Mode ist dafuer da um leicht neue Level zu erstellen: terminiert erst wenn alle Felder besetzt sind, 
+      schwarze Felder koennen mit rechter Maustaste wieder entfernt werden, blocken ist hier nicht moeglich
 """
 
 
@@ -283,6 +285,9 @@ class Window(QWidget):
 
 
 
+        if e.key() == Qt.Key_N:
+            self.neuesLevelErstellen()
+
 
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
@@ -292,15 +297,15 @@ class Window(QWidget):
         for i in range(self.anzahlZeilen):
             for j in range(self.anzahlSpalten):
                 if ( self.levelKoordinaten[i][j][0][0] < pos.x() < self.levelKoordinaten[i][j][1][0] ) \
-                and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ) \
-                and (self.level[i][j] == 0 or self.level[i][j] == 2):
+                and ( self.levelKoordinaten[i][j][0][1] < pos.y() < self.levelKoordinaten[i][j][1][1] ):
 
-                    # Feld blocken
-                    if QMouseEvent.button() == Qt.RightButton:
-                        if self.level[i][j] == 0:
-                            self.level[i][j] = 2
-                        elif self.level[i][j] == 2:
-                            self.level[i][j] = 0
+                    if self.level[i][j] == 0 or self.level[i][j] == 2:
+                        # Feld blocken
+                        if QMouseEvent.button() == Qt.RightButton and not self.creatorModeAn:
+                            if self.level[i][j] == 0:
+                                self.level[i][j] = 2
+                            elif self.level[i][j] == 2:
+                                self.level[i][j] = 0
 
                     # regulaer, wenn man was trifft und ungeblockt ist
                     if QMouseEvent.button() == Qt.LeftButton and self.level[i][j] == 0:
@@ -313,6 +318,11 @@ class Window(QWidget):
 
                         self.pruefenObGewonnen()
 
+                    # schwarze Felder mit rechter Maustaste entfernen, wenn Creator-Mode an ist
+                    elif self.level[i][j] == 1 and self.creatorModeAn and QMouseEvent.button() == Qt.RightButton:
+                        self.level[i][j] = 0
+
+                    # updatet wenn irgendein Feld getroffen wurde
                     self.update()
 
 
@@ -387,7 +397,7 @@ class Window(QWidget):
             self.hinweiseZeilen[i][1] = False
         for i in range(len(self.hinweiseSpalten)):
             self.hinweiseSpalten[i][1] = False
-
+        self.gewonnen = True
         self.update()
 
 
@@ -536,7 +546,13 @@ class Window(QWidget):
 
 
     def neuesLevelErstellen(self):
-        pass
+        self.levelReset()
+        self.loesung = ps.picrossLevelBib.zufaelligesLevelMitSchwierigkeit(ps.ANZAHLSPALTEN, ps.ANZAHLREIHEN,
+                                                                           ps.SCHWIERIGKEIT)
+        self.hinweiseSpalten, self.hinweiseZeilen = self.hinweiseErstellen()
+        self.gewonnen = False
+        self.hinweiseInZahlenZeilenSpalten = self.hinweiseInZahlenAendern()
+        self.update()
 
 
     def hinweiseInZahlenAendern(self):
@@ -570,7 +586,7 @@ class Window(QWidget):
 
 
     def kiAktivieren(self):
-        self.timer.start(1000)
+        pass
 
 
     def kiSchrittEindeutigeReihen(self):
