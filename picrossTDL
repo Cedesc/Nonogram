@@ -1,7 +1,6 @@
 
-- Tastensteuerung ordnen, uebersichtlicher machen und H (Hilfe) ueberarbeiten!!!
 - Dokumentieren was alles moeglich ist
-- Init ordnen / Funktionien erstellen
+- Init ordnen / Funktionen erstellen
 - Funktionen ordnen
 
 KI entwickeln:
@@ -10,6 +9,7 @@ KI entwickeln:
     - Funktion, die alle Gemeinsamkeiten aller moeglichen Loesungen herausfindet und eintraegt (vorhanden)
     ( - Backtracking nicht noetig, da jedes eindeutige Level sich bis hierhin bereits geloest hat, oder?? )
 
+    - Effizienz erhoehen
     - alles zusammenfuegen
     - Timer nach und nach erstellen lassen
 

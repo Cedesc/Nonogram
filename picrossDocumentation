@@ -1,0 +1,23 @@
+Moeglichkeiten :
+
+- Picross normal spielbar
+
+- KI, die das Level bei eindeutiger Loesung immer loest
+    - per Tastendruck entweder am Stueck, ein Durchlauf durch jede Reihe und Spalte oder eine einzelne Zeile
+    - noch sehr uneffizient, bis 15x15 aber absolut akzeptabel
+
+- Steuerung :
+    - H (Hilfe) : Steuerung anzeigen
+    - esc (Escape) : Fenster schliessen
+    - L (Loesung) : Loesung anzeigen
+    - R (Reset) : Level Reset
+    - N (Neu) : Neues zufaelliges Level erstellen
+    - C (Creator) : Creator Mode anschalten
+        - S (Save) : Level im Creator Mode Speichern
+    - K (KI) : KI aktivieren oder deaktivieren
+        - 1 : Je eine eindeutige Reihe vervollstaendigen
+        - 2 : Je eine Reihe weitergehen und alle eindeutigen Felder eintragen
+        - 3 : Alle eindeutigen Reihen vervollstaendigen
+        - 4 : Alle Reihen je einmal abgehen und alle eindeutigen Felder eintragen
+        - Q : KI komplett durchlaufen lassen
+        - W : neue Hinweise eintragen (Level dann nur durch KI richtig loesbar, da man keine vorliegende Loesung hat)

@@ -206,21 +206,38 @@ class Window(QWidget):
     def fn(self, e):
         # H druecken um Steuerung anzuzeigen
         if e.key() == Qt.Key_H:
-            print("Steuerung: \n  Escape :  Fenster schliessen\n  L :  Loesung anzeigen\n  R :  Level neustarten")
-            print("  C :  Creator-Mode anschalten\n  S :  Wenn der Creator-Mode an ist, wird das Level gespeichert")
+            print("- Steuerung :",
+                    "\n    - H (Hilfe) : Steuerung anzeigen",
+                    "\n    - esc (Escape) : Fenster schliessen",
+                    "\n    - L (Loesung) : Loesung anzeigen",
+                    "\n    - R (Reset) : Level Reset",
+                    "\n    - N (Neu) : Neues zufaelliges Level erstellen",
+                    "\n    - C (Creator) : Creator Mode anschalten",
+                    "\n        - S (Save) : Level im Creator Mode Speichern",
+                    "\n    - K (KI) : KI aktivieren oder deaktivieren",
+                    "\n        - 1 : Je eine eindeutige Reihe vervollstaendigen",
+                    "\n        - 2 : Je eine Reihe weitergehen und alle eindeutigen Felder eintragen",
+                    "\n        - 3 : Alle eindeutigen Reihen vervollstaendigen",
+                    "\n        - 4 : Alle Reihen je einmal abgehen und alle eindeutigen Felder eintragen",
+                    "\n        - Q : KI komplett durchlaufen lassen",
+                    "\n        - W : neue Hinweise eintragen")
+
+        # esc druecken um Level zu schliessen
+        if e.key() == Qt.Key_Escape:
+            self.close()
+
+        # L druecken um Loesung anzuzeigen
+        if e.key() == Qt.Key_L:
+            self.loesungAnzeigen()
 
         # R druecken um Level neuzustarten
         if e.key() == Qt.Key_R:
             self.levelReset()
             self.update()
 
-        # L druecken um Loesung anzuzeigen
-        if e.key() == Qt.Key_L:
-            self.loesungAnzeigen()
-
-        # esc druecken um Level zu schliessen
-        if e.key() == Qt.Key_Escape:
-            self.close()
+        # N druecken um neues zufaelliges Level zu erstellen
+        if e.key() == Qt.Key_N:
+            self.neuesLevelErstellen()
 
         # C druecken um in Creator-Mode zu wechseln
         if e.key() == Qt.Key_C:
@@ -228,7 +245,7 @@ class Window(QWidget):
                 print("Bereits in Creator-Mode")
             else:
                 self.creatorModeAn = True
-                self.creatorModeWechseln()
+                self.loesungVollstaendigSchwarzMachen()
                 print("Creator-Mode aktiv")
 
         # S druecken um momentanes Level zu speichern
@@ -236,8 +253,8 @@ class Window(QWidget):
             self.creatorModelevelSpeichern()
             print("Level abgespeichert")
 
-        # P druecken um KI zu erlauben oder zu verbieten
-        if e.key() == Qt.Key_P:
+        # KI :  K druecken um KI zu erlauben oder zu verbieten
+        if e.key() == Qt.Key_K:
             if self.kiErlaubt:
                 self.kiErlaubt = False
                 print("KI verboten")
@@ -246,19 +263,24 @@ class Window(QWidget):
                 print("KI erlaubt")
             self.update()
 
-        # KI :  K druecken um je eine eindeutige Reihen zu vervollstaendigen
-        if e.key() == Qt.Key_K:
+        # KI :  1 druecken um je eine eindeutige Reihen zu vervollstaendigen
+        if e.key() == Qt.Key_1:
             self.kiSchrittEindeutigeReihen()
             self.update()
 
-        # KI :  J druecken um alle eindeutige Reihen zu vervollstaendigen
-        if e.key() == Qt.Key_J:
+        # KI :  2 druecken um je eine Reihe/Spalte weiterzugehen und alle eindeutigen Felder einzutragen
+        if e.key() == Qt.Key_2:
+            self.kiSchrittEindeutigeFelder()
+            self.update()
+
+        # KI :  3 druecken um alle eindeutigen Reihen zu vervollstaendigen
+        if e.key() == Qt.Key_3:
             while self.kiSchrittEindeutigeReihen():
                 pass
             self.update()
 
-        # KI :  Q druecken um jede Zeile und jede Spalte je einmal abzugehen und alle eindeutigen Felder einzutragen
-        if e.key() == Qt.Key_Q:
+        # KI :  4 druecken um alle Reihen je einmal abzugehen und alle eindeutigen Felder einzutragen
+        if e.key() == Qt.Key_4:
             while not self.gewonnen:
                 self.kiSchrittEindeutigeFelder()
                 self.update()
@@ -266,27 +288,19 @@ class Window(QWidget):
                     break
             self.update()
 
-        # KI :  W druecken um eine Reihe/Spalte weiterzugehen und alle eindeutigen Felder einzutragen
-        if e.key() == Qt.Key_W:
-            self.kiSchrittEindeutigeFelder()
+        # KI :  Q druecken um KI komplett durchlaufen zu lassen
+        if e.key() == Qt.Key_Q:
+            self.kiDurchlaufenLassen()
             self.update()
 
-        # KI :  A druecken um neue Hinweise einzutragen
-        if e.key() == Qt.Key_A:
+        # KI :  W druecken um neue Hinweise einzutragen
+        if e.key() == Qt.Key_W:
+            self.loesungVollstaendigSchwarzMachen()
             self.hinweiseZeilen, self.hinweiseSpalten = self.hinweiseInStringsAendern(self.eingabeDerHinweise())
             self.hinweiseInZahlenZeilenSpalten = self.hinweiseInZahlenAendern()
             self.geaenderteHinweise = True
             self.update()
 
-        # KI :  Y druecken um KI komplett durchlaufen zu lassen
-        if e.key() == Qt.Key_Y:
-            self.kiDurchlaufenLassen()
-            self.update()
-
-
-
-        if e.key() == Qt.Key_N:
-            self.neuesLevelErstellen()
 
 
 
@@ -320,7 +334,8 @@ class Window(QWidget):
                         self.pruefenObGewonnen()
 
                     # schwarze Felder mit rechter Maustaste entfernen, wenn Creator-Mode an ist
-                    elif self.level[i][j] == 1 and self.creatorModeAn and QMouseEvent.button() == Qt.RightButton:
+                    elif self.level[i][j] == 1 and (self.creatorModeAn or self.geaenderteHinweise)\
+                            and QMouseEvent.button() == Qt.RightButton:
                         self.level[i][j] = 0
 
                     # updatet wenn irgendein Feld getroffen wurde
@@ -506,7 +521,7 @@ class Window(QWidget):
             self.zeileabgeschlossen(i)
 
 
-    def creatorModeWechseln(self):
+    def loesungVollstaendigSchwarzMachen(self):
 
         # Loesung mit nur schwarzen Feldern erstellen, damit man keinen Fehler machen kann und nicht vorher abbricht
         vollstaendigeLoesung = []
@@ -875,7 +890,7 @@ class Window(QWidget):
     def eingabeDerHinweise(self):
         datenAlleZeilen = []
         for zeilenNummer in range(self.anzahlZeilen):
-            rohdatenZeile = list(input("Zeile Nr." + str(zeilenNummer) + " :  "))
+            rohdatenZeile = list(input("Reihe Nr." + str(zeilenNummer) + " :  "))
 
             verarbeiteteDatenZeile = []
             momentaneZahlZ = ""
@@ -908,20 +923,50 @@ class Window(QWidget):
 
             datenAlleSpalten.append(verarbeiteteDatenSpalte)
 
-        """print("Zeilen :  ", datenAlleZeilen)
+        print("Zeilen :  ", datenAlleZeilen)
         print("Spalten :  ", datenAlleSpalten)
         while input("Eingabe korrekt? (y/n)  ") != 'y':
-            print(isinstance(datenAlleSpalten, list))
-            datenAlleZeilen = input("Zeilen :  ")
-            datenAlleSpalten = input("Spalten :  ")
-            print()
-            print("also korrekte Zeilen :  ", datenAlleZeilen)
-            print("also korrekte Spalten :   ", datenAlleSpalten)
-            if input("abbrechen? (y/n)") == 'y':
-                self.close()"""
-
+            inputDatenAlleZ = input("Zeilen :  ")
+            inputDatenAlleS = input("Spalten :  ")
+            datenAlleZeilen, datenAlleSpalten = self.eingabeDerHinweiseGanzeReihe(inputDatenAlleZ, inputDatenAlleS)
+            print("Eingabe Zeilen :  ", datenAlleZeilen)
+            print("Eingabe Spalten :   ", datenAlleSpalten)
 
         return datenAlleZeilen, datenAlleSpalten
+
+
+    def eingabeDerHinweiseGanzeReihe(self, zeilenHinweiseEingabe, spaltenHinweiseEingabe):
+        datenAlleZ = []
+        verarbeiteteDatenZeile = []
+        momentaneZahlZ = ""
+        for zeichenZ in zeilenHinweiseEingabe:
+
+            if zeichenZ not in [',', ' ', '[', ']']:
+                momentaneZahlZ += zeichenZ
+            elif momentaneZahlZ != "":
+                verarbeiteteDatenZeile.append(int(momentaneZahlZ))
+                momentaneZahlZ = ""
+            if zeichenZ == ']' and verarbeiteteDatenZeile != []:
+                datenAlleZ.append(verarbeiteteDatenZeile)
+                verarbeiteteDatenZeile = []
+                momentaneZahlZ = ""
+
+        datenAlleS = []
+        verarbeiteteDatenSpalte = []
+        momentaneZahlS = ""
+        for zeichenS in spaltenHinweiseEingabe:
+
+            if zeichenS not in [',', ' ', '[', ']']:
+                momentaneZahlS += zeichenS
+            elif momentaneZahlS != "":
+                verarbeiteteDatenSpalte.append(int(momentaneZahlS))
+                momentaneZahlS = ""
+            if zeichenS == ']' and verarbeiteteDatenSpalte != []:
+                datenAlleS.append(verarbeiteteDatenSpalte)
+                verarbeiteteDatenSpalte = []
+                momentaneZahlS = ""
+
+        return datenAlleZ, datenAlleS
 
 
     def kiDurchlaufenLassen(self):
