@@ -289,6 +289,7 @@ class Window(QWidget):
             self.neuesLevelErstellen()
 
 
+
     def mousePressEvent(self, QMouseEvent):
         pos = QMouseEvent.pos()
         #print("               ", pos.x(), pos.y())     # zum ueberpruefen wo man klickt
