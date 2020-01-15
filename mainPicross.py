@@ -290,7 +290,7 @@ class Window(QWidget):
 
         # KI :  Q druecken um KI komplett durchlaufen zu lassen
         if e.key() == Qt.Key_Q:
-            self.kiDurchlaufenLassen()
+            self.kiDurchlaufenLassen(1000)
             self.update()
 
         # KI :  W druecken um neue Hinweise einzutragen
@@ -663,7 +663,6 @@ class Window(QWidget):
                     self.zeileabgeschlossen(i)
                 return True
 
-        print("nichts neues")
         return False
 
 
@@ -857,7 +856,7 @@ class Window(QWidget):
         if self.kiZaehler == 0:
             self.pruefenObGewonnen()
 
-        print("KI - Schritt  :   ", self.kiZaehler)
+        # print("KI - Schritt  :   ", self.kiZaehler)
 
 
     def spalteAlsEinzelneListe(self, spaltenNummer):
@@ -969,13 +968,13 @@ class Window(QWidget):
         return datenAlleZ, datenAlleS
 
 
-    def kiDurchlaufenLassen(self):
+    def kiDurchlaufenLassen(self, maxSchritte = 1000):
         while self.kiSchrittEindeutigeReihen():
             pass
 
-        while not self.gewonnen:
+        schrittzaehler = 0
+        while not self.gewonnen and schrittzaehler < maxSchritte:
             self.kiSchrittEindeutigeFelder()
-            self.update()
             if self.kiZaehler == 0:
                 fertig = True
                 for zeile in self.level:
@@ -984,6 +983,13 @@ class Window(QWidget):
                             fertig = False
                 if fertig:
                     break
+            schrittzaehler += 1
+
+        self.kiZaehler = 0
+        if self.gewonnen:
+            print("Geloest in", schrittzaehler, "Schritten")
+        else:
+            print("Abgebrochen nach", maxSchritte, "Schritten")
 
 
 
