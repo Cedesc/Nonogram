@@ -49,12 +49,15 @@ class Window(QWidget):
         self.kiErlaubt = True
         self.kiZaehler = 0  # Zaehler um bei KI Reihen nacheinander statt alle auf einmal auszufuellen
 
-        #self.timer = QTimer(self)
-        #self.timer.timeout.connect(self.update)
+        self.timer = QTimer(self)
+        #self.timer.timeout.connect(self.something)
+        #self.timer.start(2000)
 
         self.keyPressEvent = self.fn
         self.show()
 
+    def something(self):
+        print("heyyyy")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -220,7 +223,9 @@ class Window(QWidget):
                     "\n        - 3 : Alle eindeutigen Reihen vervollstaendigen",
                     "\n        - 4 : Alle Reihen je einmal abgehen und alle eindeutigen Felder eintragen",
                     "\n        - Q : KI komplett durchlaufen lassen",
-                    "\n        - W : neue Hinweise eintragen")
+                    "\n        - W : neue Hinweise eintragen",
+                    "\n        - T : mit Timer alle Reihen je einmal abgehen und alle eindeutigen Felder eintragen",
+                    "\n        - Z : Timer anhalten")
 
         # esc druecken um Level zu schliessen
         if e.key() == Qt.Key_Escape:
@@ -301,7 +306,22 @@ class Window(QWidget):
             self.geaenderteHinweise = True
             self.update()
 
+        # KI :  T druecken um mit Timer alle Reihen je einmal abzugehen und alle eindeutigen Felder einzutragen
+        if e.key() == Qt.Key_T:
+            self.timer.timeout.connect(self.kiSchrittEindeutigeFelder)
+            self.timer.timeout.connect(self.update)
+            self.timer.timeout.connect(self.timerStop)
+            self.timer.start(200)
+            print("Timer gestartet")
 
+        # KI :  Z druecken um Timer zu stoppen
+        if e.key() == Qt.Key_I:
+            self.timer.stop()
+            print("Timer gestoppt")
+
+    def timerStop(self):
+        if self.gewonnen:
+            self.timer.stop()
 
 
     def mousePressEvent(self, QMouseEvent):
