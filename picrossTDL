@@ -10,7 +10,7 @@ KI entwickeln:
     ( - Backtracking nicht noetig, da jedes eindeutige Level sich bis hierhin bereits geloest hat, oder?? )
 
     - Effizienz erhoehen
-    - Timer nach und nach erstellen lassen
+    - Timer nach und nach erstellen lassen (vorhanden)
 
 noch ganz cool:
     im creator mode schwarze flaechen weiss machen koennen

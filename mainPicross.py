@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QWidget, QApplication
-from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF
+from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF, QPixmap
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import copy
 import picrossSettings as ps
@@ -56,8 +56,6 @@ class Window(QWidget):
         self.keyPressEvent = self.fn
         self.show()
 
-    def something(self):
-        print("heyyyy")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -67,6 +65,10 @@ class Window(QWidget):
         if self.gewonnen:
             painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
             self.gewinnAnimation()
+
+        ''' Hintergrundbild '''
+        xxx = QPixmap("thumb-1920-416096.jpg")
+        painter.drawPixmap(0, 0, self.wW, self.wH, xxx, 0, 0, 1920, 1200)
 
 
         ''' Netz aufbauen '''
@@ -315,7 +317,7 @@ class Window(QWidget):
             print("Timer gestartet")
 
         # KI :  Z druecken um Timer zu stoppen
-        if e.key() == Qt.Key_I:
+        if e.key() == Qt.Key_Z:
             self.timer.stop()
             print("Timer gestoppt")
 
