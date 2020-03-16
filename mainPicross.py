@@ -74,13 +74,17 @@ class Window(QWidget):
         if self.gewonnen:
             # Hintergrund wird gruen (wenn kein Hintergrundbild
             #painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
-            markerColor = QColor(105, 205, 105)
+            markerColor = QColor(50, 50, 50)
             self.gewinnAnimation()
 
         ''' Hintergrundbild '''
-        painter.drawPixmap(0, 0, self.wW, self.wH, QPixmap("thumb-1920-416096.jpg"), 0, 0, 1920, 1200)
-
-
+        painter.drawPixmap(0, 0, self.wW, self.wH, QPixmap("patrickVerstoerend.jpg"), 0, 0, 1280, 1024)
+        if self.gewonnen:
+            painter.drawPixmap(0, 0, self.wW, self.wH, QPixmap("patrickSchockiert.jpg"), 0, 0, 1920, 1200)
+            font = painter.font()
+            font.setPixelSize(40)
+            painter.setFont(font)
+            painter.drawText(0, 0, self.wW, 50, Qt.AlignHCenter, "Glueckwunsch, das Level ist geschafft!")
         ''' Netz aufbauen '''
         painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
 
