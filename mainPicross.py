@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF, QPixmap
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import copy
@@ -54,25 +54,35 @@ class Window(QWidget):
         #self.timer.start(2000)
 
         self.keyPressEvent = self.fn
+
+        self.buttonStart = QPushButton("KI starten", self)
+        self.buttonStart.clicked.connect(self.kiMitTimerDurchlaufenLassen)
+        self.buttonStart.move(self.wW // 30, self.wH - self.wH // 30)
+        self.buttonStop = QPushButton("KI stoppen", self)
+        self.buttonStop.clicked.connect(self.timer.stop)
+        self.buttonStop.move(self.wW // 30 + 80, self.wH - self.wH // 30)
+
         self.show()
 
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        markerColor = QColor(0,0,0)     # Farbe von Netz und einzelnen Feldern
 
         ''' Hintergrund '''
         painter.fillRect(0, 0, self.wW, self.wH, QColor(205, 205, 205))
         if self.gewonnen:
-            painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
+            # Hintergrund wird gruen (wenn kein Hintergrundbild
+            #painter.fillRect(0, 0, self.wW, self.wH, QColor(155, 205, 155))
+            markerColor = QColor(105, 205, 105)
             self.gewinnAnimation()
 
         ''' Hintergrundbild '''
-        xxx = QPixmap("thumb-1920-416096.jpg")
-        painter.drawPixmap(0, 0, self.wW, self.wH, xxx, 0, 0, 1920, 1200)
+        painter.drawPixmap(0, 0, self.wW, self.wH, QPixmap("thumb-1920-416096.jpg"), 0, 0, 1920, 1200)
 
 
         ''' Netz aufbauen '''
-        painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+        painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
 
         # hoehe und breite eines Felds
         hoehe = (self.wH - 2 * self.nachUnten) // self.anzahlZeilen
@@ -97,19 +107,19 @@ class Window(QWidget):
         # vertikale Linien
         for verschiebung in range(self.anzahlSpalten + 1):
             if verschiebung == 0 or verschiebung == self.anzahlSpalten:
-                painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
                                  self.nachRechts + breite * verschiebung,
                                  self.wH - self.nachUnten // 2)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
             elif verschiebung % 5 == 0:
-                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 3, Qt.SolidLine))
                 painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
                                  self.nachRechts + breite * verschiebung,
                                  self.wH - self.nachUnten // 2)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
             else:
                 painter.drawLine(self.nachRechts + breite * verschiebung,
                                  self.nachUnten // 2,
@@ -119,19 +129,19 @@ class Window(QWidget):
         # horizontale Linien
         for verschiebung in range(self.anzahlZeilen + 1):
             if verschiebung == 0 or verschiebung == self.anzahlZeilen:
-                painter.setPen(QPen(QColor(0, 0, 0), 4, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 4, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung,
                                  self.wW - self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
             elif verschiebung % 5 == 0:
-                painter.setPen(QPen(QColor(0,0,0), 3, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 3, Qt.SolidLine))
                 painter.drawLine(self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung,
                                  self.wW - self.nachRechts // 2,
                                  self.nachUnten + hoehe * verschiebung)
-                painter.setPen(QPen(QColor(0, 0, 0), 1, Qt.SolidLine))
+                painter.setPen(QPen(markerColor, 1, Qt.SolidLine))
             else:
                 painter.drawLine(self.nachRechts // 2,
                                 self.nachUnten + hoehe * verschiebung,
@@ -140,7 +150,7 @@ class Window(QWidget):
 
 
         """ Rechtecke einzeichnen """
-        painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
+        painter.setPen(QPen(markerColor, 3, Qt.SolidLine))
         for i in range(self.anzahlZeilen):
 
             for j in range(self.anzahlSpalten):
@@ -150,7 +160,7 @@ class Window(QWidget):
                                      self.levelKoordinaten[i][j][0][1],
                                      self.levelKoordinaten[i][j][1][0] - self.levelKoordinaten[i][j][0][0], # hoehe
                                      self.levelKoordinaten[i][j][1][1] - self.levelKoordinaten[i][j][0][1], # weite
-                                     QColor(0,0,0))
+                                     markerColor)
 
                 if self.level[i][j] == -1:
                     painter.setPen(QPen(QColor(200, 0, 0), 3, Qt.SolidLine))
@@ -310,20 +320,13 @@ class Window(QWidget):
 
         # KI :  T druecken um mit Timer alle Reihen je einmal abzugehen und alle eindeutigen Felder einzutragen
         if e.key() == Qt.Key_T:
-            self.timer.timeout.connect(self.kiSchrittEindeutigeFelder)
-            self.timer.timeout.connect(self.update)
-            self.timer.timeout.connect(self.timerStop)
-            self.timer.start(200)
-            print("Timer gestartet")
+            self.kiMitTimerDurchlaufenLassen()
 
         # KI :  Z druecken um Timer zu stoppen
         if e.key() == Qt.Key_Z:
             self.timer.stop()
             print("Timer gestoppt")
 
-    def timerStop(self):
-        if self.gewonnen:
-            self.timer.stop()
 
 
     def mousePressEvent(self, QMouseEvent):
@@ -1012,6 +1015,18 @@ class Window(QWidget):
             print("Geloest in", schrittzaehler, "Schritten")
         else:
             print("Abgebrochen nach", maxSchritte, "Schritten")
+
+
+    def kiMitTimerDurchlaufenLassen(self):
+        self.timer.timeout.connect(self.kiSchrittEindeutigeFelder)
+        self.timer.timeout.connect(self.update)
+        self.timer.timeout.connect(self.timerStop)
+        self.timer.start(200)
+        print("Timer gestartet")
+
+    def timerStop(self):
+        if self.gewonnen:
+            self.timer.stop()
 
 
 
