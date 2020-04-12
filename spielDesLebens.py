@@ -46,6 +46,7 @@ class Window(QWidget):
         self.img = QImage()
         self.pix = QPixmap()
         self.timer = QTimer(self)
+        self.stepCounter = 0
 
         # Feld erstellen
         self.data = np.zeros((self.wW, self.wH, 3)).astype(np.uint8)
@@ -84,10 +85,37 @@ class Window(QWidget):
 
     def fn(self, e):
         """ Tastenbelegungen """
+        if e.key() == Qt.Key_H:
+            print("Figuren:\n"
+                  "   Q:  Gleiter\n"
+                  "   W:  SpiegelU\n"
+                  "   E:  Heavyweight Spaceship\n"
+                  "   R:  F-Pentominos\n"
+                  "Funktionen:\n"
+                  "   S:  Feld loeschen und Counter zuruecksetzen\n"
+                  "   X:  Counter anzeigen lassen\n"
+                  "   Y:  Counter zuruecksetzen\n")
         if e.key() == Qt.Key_Q:
             self.figurGleiter()
         if e.key() == Qt.Key_W:
-            self.figurSpiegelU()
+            self.figurSpiegelU(0, 100)
+        if e.key() == Qt.Key_E:
+            self.figurHWWS()
+        if e.key() == Qt.Key_R:
+            self.figurFPentominos()
+        if e.key() == Qt.Key_S:
+            print("Feld geloescht und Counter zurueckgesetzt")
+            self.umaendern([], self.lebendeZellenListe)
+            self.stepCounter = 0
+        if e.key() == Qt.Key_X:
+            print(self.stepCounter, "bisherige Iterationen")
+        if e.key() == Qt.Key_Y:
+            print("Counter zurueckgesetzt")
+            self.stepCounter = 0
+
+        if e.key() == Qt.Key_B:
+            for i in range(5, 200, 10):
+                self.figurHWWS(10, i)
 
 
 
@@ -164,6 +192,7 @@ class Window(QWidget):
 
         # self.bildAktualisieren()
         self.umaendern(belebendeZellen, sterbendeZellen)
+        self.stepCounter += 1
 
 
     def anzahlLebendeNachbarnBerechnen(self, x, y):
@@ -221,14 +250,16 @@ class Window(QWidget):
 
         self.bildKomplettNeuBerechnen()
 
+    # unfertig
+    def komplettesFeldLoeschen(self):
+        """ Jede Zelle toeten """
+        self.umaendern([], self.lebendeZellenListe)
 
 
     """ Figuren """
 
-    def figurGleiter(self):
+    def figurGleiter(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
         """ Gleiter: bewegt sich oszillierend diagonal vorwaerts """
-        startX = ANZAHLSPALTEN // 2
-        startY = ANZAHLREIHEN // 2
         listeZumAendern = [(startX    , startY - 1),
                            (startX + 1, startY    ),
                            (startX - 1, startY + 1),
@@ -238,10 +269,8 @@ class Window(QWidget):
         self.umaendern(listeZumAendern)
 
 
-    def figurSpiegelU(self):
+    def figurSpiegelU(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
         """ SpiegelU: loest sich nach 54 (?) Iterationen auf """
-        startX = ANZAHLSPALTEN // 2
-        startY = ANZAHLREIHEN // 2
         listeZumAendern = [(startX - 1, startY - 3),    # obere Haelfte
                            (startX    , startY - 3),
                            (startX + 1, startY - 3),
@@ -261,6 +290,39 @@ class Window(QWidget):
         self.umaendern(listeZumAendern)
 
 
+    def figurHWWS(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+        """ Heavyweight Spaceship: bewegt sich oszillierend waagerecht vorwaerts """
+        listeZumAendern = [(startX + 1, startY - 2),
+                           (startX + 2, startY - 2),
+                           (startX - 3, startY - 1),
+                           (startX - 2, startY - 1),
+                           (startX - 1, startY - 1),
+                           (startX    , startY - 1),
+                           (startX + 2, startY - 1),
+                           (startX + 3, startY - 1),
+                           (startX - 3, startY    ),
+                           (startX - 2, startY    ),
+                           (startX - 1, startY    ),
+                           (startX    , startY    ),
+                           (startX + 1, startY    ),
+                           (startX + 2, startY    ),
+                           (startX - 2, startY + 1),
+                           (startX - 1, startY + 1),
+                           (startX    , startY + 1),
+                           (startX + 1, startY + 1)
+                           ]
+        self.umaendern(listeZumAendern)
+
+
+    def figurFPentominos(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+        """ F-Pentominos: interessante Entwicklung (1102 Iterationen) """
+        listeZumAendern = [(startX    , startY - 1),
+                           (startX + 1, startY - 1),
+                           (startX - 1, startY    ),
+                           (startX    , startY    ),
+                           (startX    , startY + 1)
+                           ]
+        self.umaendern(listeZumAendern)
 
 
 app = QApplication(sys.argv)
