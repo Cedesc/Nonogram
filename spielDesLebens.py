@@ -16,11 +16,15 @@ Vier Grundlegen:
 
 FENSTERBREITE = 700
 FENSTERHOEHE = 700
-ANZAHLSPALTEN = 500
-ANZAHLREIHEN = 500
+ANZAHLSPALTEN = 200
+ANZAHLREIHEN = 200
 
 LEBEND = [255, 255, 255]
 TOT = [0, 0, 0]
+
+FARBELEBEND = QColor(255, 255, 255).rgb()
+FARBETOT = QColor(0, 0, 0).rgb()
+
 
 
 class Window(QWidget):
@@ -32,23 +36,25 @@ class Window(QWidget):
         self.spalten, self.reihen = ANZAHLSPALTEN, ANZAHLREIHEN
         self.keyPressEvent = self.fn
         self.lebendeZellenListe = set()
+        self.img = QImage()
+        self.pix = QPixmap()
 
         # Feld erstellen
         self.data = np.zeros((self.wW, self.wH, 3)).astype(np.uint8)
         self.field = QLabel()
-        self.bildAktualisieren()
+        self.bildKomplettNeuBerechnen()
 
         # Buttons
-        self.button1 = QPushButton("kleiner Test")
-        self.button1.clicked.connect(self.machWas)
-        self.button2 = QPushButton("Testmuster erstellen")
-        self.button2.clicked.connect(self.anfangErstellen)
+        self.button1 = QPushButton("unbelegt")
+
+        self.button2 = QPushButton("unbelegt")
+
         self.button3 = QPushButton("Konvertieren")
         self.button3.clicked.connect(self.farbenKonvertieren)
-        self.button4 = QPushButton("richtig berechnen")
-        self.button4.clicked.connect(self.berechneNaechsteDaten)
+        self.button4 = QPushButton("unbelegt")
+
         self.button5 = QPushButton("richtiger berechnen?")
-        self.button5.clicked.connect(self.berechneNaechsteDatenV2)
+        self.button5.clicked.connect(self.berechneNaechsteDaten)
 
         # Positionen festlegen
         self.layout = QGridLayout()
@@ -65,174 +71,54 @@ class Window(QWidget):
 
 
     def fn(self, e):
+        """ Tastenbelegungen """
         if e.key() == Qt.Key_Q:
             self.figurGleiter()
         if e.key() == Qt.Key_W:
             self.figurSpiegelU()
 
-    def bildAktualisieren(self):
-        img = QImage(self.spalten, self.reihen, QImage.Format_RGB32)
+
+
+    """ Grundlegende Funktionen """
+
+    def bildKomplettNeuBerechnen(self):
+        """ Nicht mehr benoetigt, fuer normales Programm zu langsam. Kann man theoretisch in init packen um nur einmal
+        ausfuehren zu lassen. Berechnet jeden Pixel aus 'data' fuer 'img'. """
+        self.img = QImage(self.spalten, self.reihen, QImage.Format_RGB32)
         for x in range(self.spalten):
             for y in range(self.reihen):
-                img.setPixel(x, y, QColor(*self.data[x][y]).rgb())
-
-        pix = QPixmap.fromImage(img)
-        pix = QPixmap.scaledToWidth(pix, self.wW)
-        self.field.setPixmap(pix)
+                self.img.setPixel(x, y, QColor(*self.data[x][y]).rgb())
+        self.pix = QPixmap.fromImage(self.img)
+        self.pix = QPixmap.scaledToWidth(self.pix, self.wW)
+        self.field.setPixmap(self.pix)
         self.show()
 
 
-    def machWas(self):
-        print("ggg")
+    def umaendern(self, belebendeElemente, sterbendeElemente=None):
+        """ Als Eingabe zwei Listen mit Tupeln (Koordinaten). Aendert das aktuelle Bild bei den angegebenen Pixeln """
+        if sterbendeElemente is None:
+            sterbendeElemente = []
+        for b in belebendeElemente:
+            self.data[b[0]][b[1]] = LEBEND
+            self.lebendeZellenListe.add(b)
+            self.img.setPixel(b[0], b[1], FARBELEBEND)
 
-        self.data[2][3] = LEBEND
-        self.data[2][30] = LEBEND
-        self.data[2][32] = LEBEND
-        self.bildAktualisieren()
+        for s in sterbendeElemente:
+            self.data[s[0]][s[1]] = TOT
+            self.img.setPixel(s[0], s[1], FARBETOT)
 
+        self.pix = QPixmap.fromImage(self.img)
+        self.pix = QPixmap.scaledToWidth(self.pix, self.wW)
+        self.field.setPixmap(self.pix)
 
-    def anfangErstellen(self):
-        for i in range(ANZAHLSPALTEN // 3, int(ANZAHLSPALTEN * (2/3)), 5):
-            for j in range(ANZAHLREIHEN // 3, int(ANZAHLREIHEN * (2/3))):
-                self.data[i][j] = LEBEND
-        self.bildAktualisieren()
-
-    def farbenKonvertieren(self):
-        for i in range(ANZAHLSPALTEN):
-            for j in range(ANZAHLREIHEN):
-                if self.data[i][j][0] == 255:
-                    self.data[i][j] = TOT
-                elif self.data[i][j][0] == 0:
-                    self.data[i][j] = LEBEND
-
-        self.bildAktualisieren()
 
     def berechneNaechsteDaten(self):
-        belebendeZellen = set()
-        sterbendeZellen = set()
-        # Rausfinden welche Zellen geaendert werden muessen
-        for i in range(1, ANZAHLSPALTEN-1):
-            for j in range(1, ANZAHLREIHEN-1):
-                lebendeNachbarn = self.anzahlLebendeNachbarnBerechnen(i, j)
-
-                # Zelle wird wiederbelebt, wenn genau 3 lebende Nachbarn
-                if self.data[i][j][0] == 0:
-                    if lebendeNachbarn == 3:
-                        belebendeZellen.add((i, j))
-                        #self.data[i][j] = LEBEND
-
-                # Zelle überlebt nur, wenn genau 2 oder 3 Nachbarn leben
-                else:
-                    if not (lebendeNachbarn == 2 or lebendeNachbarn == 3):
-                        sterbendeZellen.add((i, j))
-                        #self.data[i][j] = TOT
-
-        # betreffende Zellen aendern
-        for zelleB in belebendeZellen:
-            self.data[zelleB[0]][zelleB[1]] = LEBEND
-        for zelleT in sterbendeZellen:
-            self.data[zelleT[0]][zelleT[1]] = TOT
-
-
-        self.bildAktualisieren()
-
-
-
-    def anzahlLebendeNachbarnBerechnen(self, x, y):
-        anzahlLebendeNachbarn = 0
-        if self.data[x-1][y-1][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x][y-1][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x+1][y-1][0] == 255:
-            anzahlLebendeNachbarn += 1
-
-        if self.data[x-1][y][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x+1][y][0] == 255:
-            anzahlLebendeNachbarn += 1
-
-        if self.data[x-1][y+1][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x][y+1][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x+1][y+1][0] == 255:
-            anzahlLebendeNachbarn += 1
-
-        return anzahlLebendeNachbarn
-
-
-    def figurGleiter(self):
-        startX = ANZAHLSPALTEN // 2
-        startY = ANZAHLREIHEN // 2
-
-        self.data[startX][startY-1] = LEBEND
-        self.data[startX+1][startY] = LEBEND
-        self.data[startX-1][startY+1] = LEBEND
-        self.data[startX][startY+1] = LEBEND
-        self.data[startX+1][startY+1] = LEBEND
-
-        self.lebendeZellenListe.add((startX, startY-1))
-        self.lebendeZellenListe.add((startX+1, startY))
-        self.lebendeZellenListe.add((startX-1, startY+1))
-        self.lebendeZellenListe.add((startX, startY+1))
-        self.lebendeZellenListe.add((startX+1, startY+1))
-
-        self.bildAktualisieren()
-
-    def figurSpiegelU(self):
-        startX = ANZAHLSPALTEN // 2
-        startY = ANZAHLREIHEN // 2
-
-        # obere Haelfte
-        self.data[startX-1][startY-3] = LEBEND
-        self.data[startX][startY-3] = LEBEND
-        self.data[startX+1][startY-3] = LEBEND
-        self.data[startX-1][startY-2] = LEBEND
-        self.data[startX+1][startY-2] = LEBEND
-        self.data[startX-1][startY-1] = LEBEND
-        self.data[startX+1][startY-1] = LEBEND
-
-        # untere Haelfte
-        self.data[startX-1][startY+1] = LEBEND
-        self.data[startX+1][startY+1] = LEBEND
-        self.data[startX-1][startY+2] = LEBEND
-        self.data[startX+1][startY+2] = LEBEND
-        self.data[startX-1][startY+3] = LEBEND
-        self.data[startX][startY+3] = LEBEND
-        self.data[startX+1][startY+3] = LEBEND
-
-
-        #obere Haelfte
-        self.lebendeZellenListe.add((startX-1, startY-3))
-        self.lebendeZellenListe.add((startX, startY-3))
-        self.lebendeZellenListe.add((startX+1, startY-3))
-        self.lebendeZellenListe.add((startX-1, startY-2))
-        self.lebendeZellenListe.add((startX+1, startY-2))
-        self.lebendeZellenListe.add((startX-1, startY-1))
-        self.lebendeZellenListe.add((startX+1, startY-1))
-
-
-        # untere Haelfte
-        self.lebendeZellenListe.add((startX-1, startY+1))
-        self.lebendeZellenListe.add((startX+1, startY+1))
-        self.lebendeZellenListe.add((startX-1, startY+2))
-        self.lebendeZellenListe.add((startX+1, startY+2))
-        self.lebendeZellenListe.add((startX-1, startY+3))
-        self.lebendeZellenListe.add((startX, startY+3))
-        self.lebendeZellenListe.add((startX+1, startY+3))
-
-
-
-        self.bildAktualisieren()
-
-
-    def berechneNaechsteDatenV2(self):
+        """ Berechnet die Daten fuer den naechsten Schritt des Spiel des Lebens """
         belebendeZellen = set()
         sterbendeZellen = set()
         zuUeberpruefendeUmliegendeZellen = set()
 
-
+        # jede Zelle, deren Koordinaten in "lebendeZellenListe" vermerkt sind, durchgehen
         for koordinaten in self.lebendeZellenListe:
             lebendeNachbarn = self.anzahlLebendeNachbarnBerechnen(koordinaten[0], koordinaten[1])
 
@@ -241,23 +127,22 @@ class Window(QWidget):
                 sterbendeZellen.add((koordinaten[0], koordinaten[1]))
 
             # umliegende Zellen durch moegliche Wiederbelebungen betrachten
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]-1, koordinaten[1]-1))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0], koordinaten[1]-1))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]+1, koordinaten[1]-1))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]-1, koordinaten[1]))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]+1, koordinaten[1]))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]-1, koordinaten[1]+1))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0], koordinaten[1]+1))
-            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]+1, koordinaten[1]+1))
-
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] - 1, koordinaten[1] - 1))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]    , koordinaten[1] - 1))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] + 1, koordinaten[1] - 1))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] - 1, koordinaten[1]    ))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] + 1, koordinaten[1]    ))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] - 1, koordinaten[1] + 1))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0]    , koordinaten[1] + 1))
+            zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] + 1, koordinaten[1] + 1))
+        # Alle umliegenden Zellen pruefen, 1. ob sie tot sind 2. ob sie wiederbelebt werden koennen
         for koordinatenU in zuUeberpruefendeUmliegendeZellen:
             if self.data[koordinatenU[0]][koordinatenU[1]][0] == 0:
                 # Zelle wird wiederbelebt, wenn genau 3 lebende Nachbarn
                 if self.anzahlLebendeNachbarnBerechnen(koordinatenU[0], koordinatenU[1]) == 3:
                     belebendeZellen.add((koordinatenU[0], koordinatenU[1]))
 
-
-        # betreffende Zellen aendern
+        # betreffende Zellen beleben / toeten
         for zelleB in belebendeZellen:
             self.data[zelleB[0]][zelleB[1]] = LEBEND
             self.lebendeZellenListe.add((zelleB[0], zelleB[1]))
@@ -265,11 +150,92 @@ class Window(QWidget):
             self.data[zelleT[0]][zelleT[1]] = TOT
             self.lebendeZellenListe.remove((zelleT[0], zelleT[1]))
 
-        self.bildAktualisieren()
+        # self.bildAktualisieren()
+        self.umaendern(belebendeZellen, sterbendeZellen)
 
+
+    def anzahlLebendeNachbarnBerechnen(self, x, y):
+        """ x,y (Int, Int) sind Koordinaten eines Punktes, dessen umliegende 8 Felder betrachtet werden """
+        anzahlLebendeNachbarn = 0
+        if self.data[x - 1][y - 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+        if self.data[x][y - 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+        if self.data[x + 1][y - 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+
+        if self.data[x - 1][y][0] == 255:
+            anzahlLebendeNachbarn += 1
+        if self.data[x + 1][y][0] == 255:
+            anzahlLebendeNachbarn += 1
+
+        if self.data[x - 1][y + 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+        if self.data[x][y + 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+        if self.data[x + 1][y + 1][0] == 255:
+            anzahlLebendeNachbarn += 1
+
+        return anzahlLebendeNachbarn
+
+
+
+    """ Hilfs- und Spassfunktionen """
 
     def lebendeZellenListeAktualisieren(self):
+        """ Geht jeden Pixel durch um zu schauen ob die Liste noch aktuell ist ; nur zum Ueberpruefen """
         pass
+
+
+    def farbenKonvertieren(self):
+        """ bisher nur bildlich, nicht danach berechenbar """
+        for i in range(ANZAHLSPALTEN):
+            for j in range(ANZAHLREIHEN):
+                if self.data[i][j][0] == 255:
+                    self.data[i][j] = TOT
+                elif self.data[i][j][0] == 0:
+                    self.data[i][j] = LEBEND
+
+        self.bildKomplettNeuBerechnen()
+
+
+
+    """ Figuren """
+
+    def figurGleiter(self):
+        """ Gleiter: bewegt sich oszillierend diagonal vorwaerts """
+        startX = ANZAHLSPALTEN // 2
+        startY = ANZAHLREIHEN // 2
+        listeZumAendern = [(startX    , startY - 1),
+                           (startX + 1, startY    ),
+                           (startX - 1, startY + 1),
+                           (startX    , startY + 1),
+                           (startX + 1, startY + 1)
+                           ]
+        self.umaendern(listeZumAendern)
+
+
+    def figurSpiegelU(self):
+        """ SpiegelU: loest sich nach 54 (?) Iterationen auf """
+        startX = ANZAHLSPALTEN // 2
+        startY = ANZAHLREIHEN // 2
+        listeZumAendern = [(startX - 1, startY - 3),    # obere Haelfte
+                           (startX    , startY - 3),
+                           (startX + 1, startY - 3),
+                           (startX - 1, startY - 2),
+                           (startX + 1, startY - 2),
+                           (startX - 1, startY - 1),
+                           (startX + 1, startY - 1),
+
+                           (startX - 1, startY + 1),    # untere Haelfte
+                           (startX + 1, startY + 1),
+                           (startX - 1, startY + 2),
+                           (startX + 1, startY + 2),
+                           (startX - 1, startY + 3),
+                           (startX    , startY + 3),
+                           (startX + 1, startY + 3)
+                           ]
+        self.umaendern(listeZumAendern)
 
 
 
