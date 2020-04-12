@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QLabel, QHBoxLayout, QVBoxLayout, QGridLayout
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QLabel, QHBoxLayout, QVBoxLayout, QGridLayout, QSpinBox
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF, QPixmap
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import numpy as np
@@ -19,11 +19,18 @@ FENSTERHOEHE = 700
 ANZAHLSPALTEN = 200
 ANZAHLREIHEN = 200
 
-LEBEND = [255, 255, 255]
-TOT = [0, 0, 0]
+GESCHWINDIGKEIT = 200           # default: 200
 
-FARBELEBEND = QColor(255, 255, 255).rgb()
-FARBETOT = QColor(0, 0, 0).rgb()
+LEBEND = [255, 255, 255]        # default: [255, 255, 255]
+TOT = [0, 0, 0]                 # default: [0, 0, 0]
+
+LEBEND_INDIKATOR = LEBEND[0]    # default: 255
+TOT_INDIKATOR = TOT[0]          # default: 0
+if LEBEND_INDIKATOR == TOT_INDIKATOR:
+    print("FEHLER! Indikatoren sind identisch!")
+
+FARBELEBEND = QColor(LEBEND[0], LEBEND[1], LEBEND[2]).rgb()     # default: 255, 255, 255
+FARBETOT = QColor(TOT[0], TOT[1], TOT[2]).rgb()                 # default: 0, 0, 0
 
 
 
@@ -38,6 +45,7 @@ class Window(QWidget):
         self.lebendeZellenListe = set()
         self.img = QImage()
         self.pix = QPixmap()
+        self.timer = QTimer(self)
 
         # Feld erstellen
         self.data = np.zeros((self.wW, self.wH, 3)).astype(np.uint8)
@@ -45,26 +53,30 @@ class Window(QWidget):
         self.bildKomplettNeuBerechnen()
 
         # Buttons
-        self.button1 = QPushButton("unbelegt")
+        self.buttonTimerStarten = QPushButton("Timer starten")
+        self.buttonTimerStarten.clicked.connect(self.timerStarten)
+        self.buttonTimerStoppen = QPushButton("Timer stoppen")
+        self.buttonTimerStoppen.clicked.connect(self.timerStoppen)
+        self.buttonNextStep = QPushButton("Naechsten Schritt berechnen")
+        self.buttonNextStep.clicked.connect(self.berechneNaechsteDaten)
 
-        self.button2 = QPushButton("unbelegt")
-
-        self.button3 = QPushButton("Konvertieren")
-        self.button3.clicked.connect(self.farbenKonvertieren)
-        self.button4 = QPushButton("unbelegt")
-
-        self.button5 = QPushButton("richtiger berechnen?")
-        self.button5.clicked.connect(self.berechneNaechsteDaten)
+        # Spin-Box fuer Geschwindigkeit des Timers
+        self.schrift = QLabel("Millisekunden bis zum naechsten Schritt")
+        self.schrift.setAlignment(Qt.AlignBottom)
+        self.spinBoxTimerGeschwindigkeit = QSpinBox()
+        self.spinBoxTimerGeschwindigkeit.setAlignment(Qt.AlignTop)
+        self.spinBoxTimerGeschwindigkeit.setRange(0, 5000)
+        self.spinBoxTimerGeschwindigkeit.setSingleStep(20)
+        self.spinBoxTimerGeschwindigkeit.setValue(200)
 
         # Positionen festlegen
         self.layout = QGridLayout()
         self.layout.addWidget(self.field, 0, 0, 0, 1)
-        self.layout.addWidget(self.button1, 0, 1)
-        self.layout.addWidget(self.button2, 1, 1)
-        self.layout.addWidget(self.button3, 2, 1)
-        self.layout.addWidget(self.button4, 3, 1)
-        self.layout.addWidget(self.button5, 4, 1)
-
+        self.layout.addWidget(self.buttonTimerStarten, 0, 1)
+        self.layout.addWidget(self.buttonTimerStoppen, 1, 1)
+        self.layout.addWidget(self.buttonNextStep, 2, 1)
+        self.layout.addWidget(self.schrift, 3, 1)
+        self.layout.addWidget(self.spinBoxTimerGeschwindigkeit, 4, 1)
 
         self.setLayout(self.layout)
         self.show()
@@ -182,11 +194,22 @@ class Window(QWidget):
 
     """ Hilfs- und Spassfunktionen """
 
+    def timerStarten(self):
+        self.timer.timeout.connect(self.berechneNaechsteDaten)
+        self.timer.start(self.spinBoxTimerGeschwindigkeit.value())
+        print("Timer gestartet")
+
+
+    def timerStoppen(self):
+        self.timer.stop()
+        print("Timer gestoppt")
+
+    # unfertig
     def lebendeZellenListeAktualisieren(self):
         """ Geht jeden Pixel durch um zu schauen ob die Liste noch aktuell ist ; nur zum Ueberpruefen """
         pass
 
-
+    # unfertig
     def farbenKonvertieren(self):
         """ bisher nur bildlich, nicht danach berechenbar """
         for i in range(ANZAHLSPALTEN):
@@ -236,7 +259,6 @@ class Window(QWidget):
                            (startX + 1, startY + 3)
                            ]
         self.umaendern(listeZumAendern)
-
 
 
 
