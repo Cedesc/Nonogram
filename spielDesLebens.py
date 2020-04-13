@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QLabel, QHBoxLay
 from PyQt5.QtGui import QPainter, QColor, QFont, QBrush, QPen, QImage, QPainterPath, QPolygonF, QPixmap
 from PyQt5.QtCore import Qt, QEvent, QRect, QPointF, QPropertyAnimation, QTimer
 import numpy as np
+import spielDesLebensSettings as settings
 
 
 """
@@ -14,23 +15,6 @@ Vier Grundlegen:
 """
 
 
-FENSTERBREITE = 700
-FENSTERHOEHE = 700
-ANZAHLSPALTEN = 200
-ANZAHLREIHEN = 200
-
-GESCHWINDIGKEIT = 200           # default: 200
-
-LEBEND = [255, 255, 255]        # default: [255, 255, 255]
-TOT = [0, 0, 0]                 # default: [0, 0, 0]
-
-LEBEND_INDIKATOR = LEBEND[0]    # default: 255
-TOT_INDIKATOR = TOT[0]          # default: 0
-if LEBEND_INDIKATOR == TOT_INDIKATOR:
-    print("FEHLER! Indikatoren sind identisch!")
-
-FARBELEBEND = QColor(LEBEND[0], LEBEND[1], LEBEND[2]).rgb()     # default: 255, 255, 255
-FARBETOT = QColor(TOT[0], TOT[1], TOT[2]).rgb()                 # default: 0, 0, 0
 
 
 
@@ -39,8 +23,14 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.wW, self.wH = FENSTERBREITE, FENSTERHOEHE
-        self.spalten, self.reihen = ANZAHLSPALTEN, ANZAHLREIHEN
+        self.wW, self.wH = settings.FENSTERBREITE, settings.FENSTERHOEHE
+        self.spalten, self.reihen = settings.ANZAHLSPALTEN, settings.ANZAHLREIHEN
+        self.dataLebend = settings.LEBEND
+        self.dataTot = settings.TOT
+        self.indikatorLebend = settings.LEBEND_INDIKATOR
+        self.indikatorTot = settings.TOT_INDIKATOR
+        self.farbeLebend = settings.FARBELEBEND
+        self.farbeTot = settings.FARBETOT
         self.keyPressEvent = self.fn
         self.lebendeZellenListe = set()
         self.img = QImage()
@@ -50,6 +40,9 @@ class Window(QWidget):
 
         # Feld erstellen
         self.data = np.zeros((self.wW, self.wH, 3)).astype(np.uint8)
+        for i in range(self.wW):
+            for j in range(self.wH):
+                self.data[i][j] = self.dataTot
         self.field = QLabel()
         self.bildKomplettNeuBerechnen()
 
@@ -98,7 +91,7 @@ class Window(QWidget):
         if e.key() == Qt.Key_Q:
             self.figurGleiter()
         if e.key() == Qt.Key_W:
-            self.figurSpiegelU(0, 100)
+            self.figurSpiegelU()
         if e.key() == Qt.Key_E:
             self.figurHWWS()
         if e.key() == Qt.Key_R:
@@ -139,13 +132,13 @@ class Window(QWidget):
         if sterbendeElemente is None:
             sterbendeElemente = []
         for b in belebendeElemente:
-            self.data[b[0]][b[1]] = LEBEND
+            self.data[b[0]][b[1]] = self.dataLebend
             self.lebendeZellenListe.add(b)
-            self.img.setPixel(b[0], b[1], FARBELEBEND)
+            self.img.setPixel(b[0], b[1], self.farbeLebend)
 
         for s in sterbendeElemente:
-            self.data[s[0]][s[1]] = TOT
-            self.img.setPixel(s[0], s[1], FARBETOT)
+            self.data[s[0]][s[1]] = self.dataTot
+            self.img.setPixel(s[0], s[1], self.farbeTot)
 
         self.pix = QPixmap.fromImage(self.img)
         self.pix = QPixmap.scaledToWidth(self.pix, self.wW)
@@ -177,17 +170,17 @@ class Window(QWidget):
             zuUeberpruefendeUmliegendeZellen.add((koordinaten[0] + 1, koordinaten[1] + 1))
         # Alle umliegenden Zellen pruefen, 1. ob sie tot sind 2. ob sie wiederbelebt werden koennen
         for koordinatenU in zuUeberpruefendeUmliegendeZellen:
-            if self.data[koordinatenU[0]][koordinatenU[1]][0] == 0:
+            if self.data[koordinatenU[0]][koordinatenU[1]][0] == self.indikatorTot:
                 # Zelle wird wiederbelebt, wenn genau 3 lebende Nachbarn
                 if self.anzahlLebendeNachbarnBerechnen(koordinatenU[0], koordinatenU[1]) == 3:
                     belebendeZellen.add((koordinatenU[0], koordinatenU[1]))
 
         # betreffende Zellen beleben / toeten
         for zelleB in belebendeZellen:
-            self.data[zelleB[0]][zelleB[1]] = LEBEND
+            self.data[zelleB[0]][zelleB[1]] = self.dataLebend
             self.lebendeZellenListe.add((zelleB[0], zelleB[1]))
         for zelleT in sterbendeZellen:
-            self.data[zelleT[0]][zelleT[1]] = TOT
+            self.data[zelleT[0]][zelleT[1]] = self.dataTot
             self.lebendeZellenListe.remove((zelleT[0], zelleT[1]))
 
         # self.bildAktualisieren()
@@ -198,23 +191,23 @@ class Window(QWidget):
     def anzahlLebendeNachbarnBerechnen(self, x, y):
         """ x,y (Int, Int) sind Koordinaten eines Punktes, dessen umliegende 8 Felder betrachtet werden """
         anzahlLebendeNachbarn = 0
-        if self.data[x - 1][y - 1][0] == 255:
+        if self.data[x - 1][y - 1][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
-        if self.data[x][y - 1][0] == 255:
+        if self.data[x][y - 1][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
-        if self.data[x + 1][y - 1][0] == 255:
-            anzahlLebendeNachbarn += 1
-
-        if self.data[x - 1][y][0] == 255:
-            anzahlLebendeNachbarn += 1
-        if self.data[x + 1][y][0] == 255:
+        if self.data[x + 1][y - 1][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
 
-        if self.data[x - 1][y + 1][0] == 255:
+        if self.data[x - 1][y][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
-        if self.data[x][y + 1][0] == 255:
+        if self.data[x + 1][y][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
-        if self.data[x + 1][y + 1][0] == 255:
+
+        if self.data[x - 1][y + 1][0] == self.indikatorLebend:
+            anzahlLebendeNachbarn += 1
+        if self.data[x][y + 1][0] == self.indikatorLebend:
+            anzahlLebendeNachbarn += 1
+        if self.data[x + 1][y + 1][0] == self.indikatorLebend:
             anzahlLebendeNachbarn += 1
 
         return anzahlLebendeNachbarn
@@ -241,12 +234,12 @@ class Window(QWidget):
     # unfertig
     def farbenKonvertieren(self):
         """ bisher nur bildlich, nicht danach berechenbar """
-        for i in range(ANZAHLSPALTEN):
-            for j in range(ANZAHLREIHEN):
-                if self.data[i][j][0] == 255:
-                    self.data[i][j] = TOT
-                elif self.data[i][j][0] == 0:
-                    self.data[i][j] = LEBEND
+        for i in range(self.spalten):
+            for j in range(self.reihen):
+                if self.data[i][j][0] == self.indikatorLebend:
+                    self.data[i][j] = self.dataTot
+                elif self.data[i][j][0] == self.indikatorTot:
+                    self.data[i][j] = self.dataLebend
 
         self.bildKomplettNeuBerechnen()
 
@@ -258,7 +251,7 @@ class Window(QWidget):
 
     """ Figuren """
 
-    def figurGleiter(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+    def figurGleiter(self, startX = settings.ANZAHLSPALTEN // 2, startY = settings.ANZAHLREIHEN // 2):
         """ Gleiter: bewegt sich oszillierend diagonal vorwaerts """
         listeZumAendern = [(startX    , startY - 1),
                            (startX + 1, startY    ),
@@ -269,7 +262,7 @@ class Window(QWidget):
         self.umaendern(listeZumAendern)
 
 
-    def figurSpiegelU(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+    def figurSpiegelU(self, startX = settings.ANZAHLSPALTEN // 2, startY = settings.ANZAHLREIHEN // 2):
         """ SpiegelU: loest sich nach 54 (?) Iterationen auf """
         listeZumAendern = [(startX - 1, startY - 3),    # obere Haelfte
                            (startX    , startY - 3),
@@ -290,7 +283,7 @@ class Window(QWidget):
         self.umaendern(listeZumAendern)
 
 
-    def figurHWWS(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+    def figurHWWS(self, startX = settings.ANZAHLSPALTEN // 2, startY = settings.ANZAHLREIHEN // 2):
         """ Heavyweight Spaceship: bewegt sich oszillierend waagerecht vorwaerts """
         listeZumAendern = [(startX + 1, startY - 2),
                            (startX + 2, startY - 2),
@@ -314,7 +307,7 @@ class Window(QWidget):
         self.umaendern(listeZumAendern)
 
 
-    def figurFPentominos(self, startX = ANZAHLSPALTEN // 2, startY = ANZAHLREIHEN // 2):
+    def figurFPentominos(self, startX = settings.ANZAHLSPALTEN // 2, startY = settings.ANZAHLREIHEN // 2):
         """ F-Pentominos: interessante Entwicklung (1102 Iterationen) """
         listeZumAendern = [(startX    , startY - 1),
                            (startX + 1, startY - 1),
